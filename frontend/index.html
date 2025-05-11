@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Processing Service</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>YOLO Object Detection Service</h1>
+
+    <div class="upload-section">
+        <div class="file-selector">
+            <h3>1. Select Input</h3>
+            <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.mp4">
+            <div class="or-divider">OR</div>
+            <select id="preset-files">
+                <option value="">Choose from examples</option>
+                <option value="example1.jpg">Example Image</option>
+                <option value="example2.mp4">Example Video</option>
+            </select>
+        </div>
+
+        <div class="model-selector">
+            <h3>2. Model Settings</h3>
+            <select id="model-select" onchange="toggleCustomModel()">
+                <option value="default">Default Model</option>
+                <option value="custom">Custom Model</option>
+            </select>
+
+            <div id="custom-model-fields" style="display: none;">
+                <div class="upload-row">
+                    <label>Model Weights (.pt):</label>
+                    <input type="file" id="weights-file" accept=".pt" required>
+                </div>
+                <div class="upload-row">
+                    <label>Model Config (.yaml):</label>
+                    <input type="file" id="config-file" accept=".yaml,.yml" required
+                           onchange="parseYamlConfig(event)">
+                </div>
+            </div>
+        </div>
+
+        <div class="processing-settings">
+            <h3>3. Processing Parameters</h3>
+            <div class="confidence">
+                <label>Confidence Threshold: <span id="confidence-value">0.5</span></label>
+                <input type="range" id="confidence" min="0" max="1" step="0.05" value="0.5">
+            </div>
+
+            <div class="color-picker">
+                <h4>Class Colors</h4>
+                <div class="color-grid" id="color-grid"></div>
+            </div>
+        </div>
+
+        <button id="process-btn">Process</button>
+    </div>
+
+    <div class="results">
+        <div class="image-preview">
+            <!-- Левая часть - обработанное изображение -->
+            <div class="processed-container">
+                <img id="original-img" alt="Original" style="display: none;">
+                <div id="processing-status" style="display: none;">Detecting...</div>
+            </div>
+
+            <!-- Правая часть - оригинал и кнопки -->
+            <div class="original-container">
+                <img id="processed-img" alt="Processed" style="display: none;">
+                <div class="navigation-buttons" style="display: none;">
+                    <button id="prev-btn" disabled>← Original</button>
+                    <button id="next-btn">Processed →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+version: '3.11'
+
+services:
+  frontend:
+    image: nginx:alpine
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./shared_volume:/app/shared_volume
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./shared_volume:/app/shared_volume
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+  celery_worker:
+    build: ./backend
+    command: celery -A main.celery worker --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./shared_volume:/app/shared_volume
+    networks:
+      - app-network
+    depends_on:
+      - redis
+      - backend
+
+volumes:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge
