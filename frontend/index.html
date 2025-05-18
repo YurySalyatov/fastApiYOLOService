@@ -43,16 +43,26 @@
             </div>
         </div>
 
+        <!-- Обновите секцию processing-settings -->
         <div class="processing-settings">
             <h3>3. Processing Parameters</h3>
-            <div class="confidence">
-                <label>Confidence Threshold: <span id="confidence-value">0.5</span></label>
-                <input type="range" id="confidence" min="0" max="1" step="0.05" value="0.5">
-            </div>
+            <div class="settings-group">
+                <div class="confidence">
+                    <label>Confidence Threshold:
+                        <span id="confidence-value">0.5</span>
+                    </label>
+                    <input type="range" id="confidence" min="0" max="1" step="0.05" value="0.5">
+                </div>
 
-            <div class="color-picker">
-                <h4>Class Colors</h4>
-                <div class="color-grid" id="color-grid"></div>
+                <!-- Обновленный color-picker -->
+                <div class="color-picker compact">
+                    <h4>Class Colors
+                        <span class="dropdown-toggle">▼</span>
+                    </h4>
+                    <div class="color-dropdown" id="color-dropdown">
+                        <div class="dropdown-list scrollable" id="color-list"></div>
+                    </div>
+                </div>
             </div>
         </div>
 

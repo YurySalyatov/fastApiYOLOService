@@ -7,26 +7,28 @@ from fastapi.responses import RedirectResponse
 from celery import Celery
 from apscheduler.schedulers.background import BackgroundScheduler
 from config import settings
-from file_utils import process_image, process_video, load_model
+from file_utils import process_image, process_video, load_model, get_colors
 import yaml
 import json
+from ultralytics import YOLO
 
 from fastapi.middleware.cors import CORSMiddleware
-
-
 
 app = FastAPI()
 celery = Celery(__name__, broker=settings.REDIS_URL, backend=settings.REDIS_URL)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600
 )
 # Инициализация папок
 Path(settings.UPLOAD_FOLDER).mkdir(exist_ok=True, parents=True)
@@ -37,6 +39,7 @@ Path(settings.MODELS_FOLDER).mkdir(exist_ok=True, parents=True)
 @app.get("/", include_in_schema=False)
 async def redirect():
     return RedirectResponse("/docs")
+
 
 @app.post("/upload/")
 async def upload_file(
@@ -106,28 +109,16 @@ def process_video_task(input_path, confidence, model_name):
 
 @app.get("/api/models")
 def get_available_models():
-    models = []
+    model_default = YOLO('yolo12s.pt')
+    models = [{'name': 'default yolo12s',
+               'classes': model_default.names,
+               'colors': get_colors(len(model_default.names))}]
     models_dir = settings.MODELS_FOLDER
-    print(models_dir)
     for pt_file in models_dir.glob("*.pt"):
         model_name = pt_file.stem
-        if model_name.endswith("_best"):
-            model_name = model_name  # Удаляем _best из имени файла
-
-        yaml_file = models_dir / f"{model_name}.yaml"
-        color_file = models_dir / f"{model_name}.json"
-
-        classes = []
-        colors = {}
-        if not yaml_file.exists() or not color_file.exists():
-            continue
-        with open(yaml_file) as f:
-            config = yaml.safe_load(f)
-            classes = config.get('names', [])
-
-        with open(color_file) as f:
-            colors = json.load(f)
-
+        model = YOLO(pt_file)
+        classes = model.names
+        colors = get_colors(len(classes))
         models.append({
             'name': model_name,
             'classes': classes,

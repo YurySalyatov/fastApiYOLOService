@@ -15,6 +15,24 @@ DEFAULT_COLORS = [
 ]
 
 
+def get_colors(cnt):
+    if cnt <= len(DEFAULT_COLORS):
+        return DEFAULT_COLORS[:cnt]
+
+    res = DEFAULT_COLORS[:]
+    for i in range(cnt - len(DEFAULT_COLORS)):
+        pred_color = res[i]
+        add = 113
+        if i % 3 == 0:
+            color = ((pred_color[0] + add) % 255, pred_color[1], pred_color[2])
+        elif i % 3 == 0:
+            color = (pred_color[0], (pred_color[1] + add) % 255, pred_color[2])
+        else:
+            color = (pred_color[0], pred_color[1], (pred_color[2] + add) % 255)
+        res.append(color)
+    return res
+
+
 def process_frame(model, frame):
     """Process a single frame and return detection results
     :param frame: one frame to predict

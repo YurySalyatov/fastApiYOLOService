@@ -14,7 +14,7 @@ body {
     background: white;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 h1, h3, h4 {
@@ -169,6 +169,7 @@ input[type="color"] {
 .video-results {
     display: none !important;
 }
+
 .image-preview {
     display: flex;
     flex-direction: row;
@@ -195,6 +196,7 @@ input[type="color"] {
     max-height: 400px;
     object-fit: contain;
 }
+
 .upload-row {
     margin: 10px 0;
     display: flex;
@@ -205,4 +207,52 @@ input[type="color"] {
 .upload-row label {
     font-weight: 500;
     color: #333;
+}
+
+.color-dropdown {
+    position: relative;
+    margin-top: 10px;
+}
+
+.dropdown-list {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    z-index: 1000;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-list.scrollable {
+    display: block;
+    position: relative;
+    max-height: 200px;
+    border: none;
+    box-shadow: none;
+}
+
+.color-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.color-item label {
+    flex-grow: 1;
+    margin-right: 15px;
+}
+
+.dropdown-toggle {
+    cursor: pointer;
+    font-size: 0.8em;
+    margin-left: 10px;
+    transition: transform 0.2s;
+}
+
+.dropdown-toggle.active {
+    transform: rotate(180deg);
 }

@@ -20,6 +20,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./shared_volume:/app/shared_volume
+      - ./shared_volume/models:/app/shared_volume/models
     ports:
       - "8000:8000"
     networks:

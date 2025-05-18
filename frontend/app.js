@@ -1,8 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
-    initColorPicker();
-    setupEventListeners();
-});
-
 function setupEventListeners() {
     document.getElementById('process-btn').addEventListener('click', processFile);
     document.getElementById('confidence').addEventListener('input', updateConfidence);
@@ -27,7 +22,7 @@ async function processFile() {
     formData.append('model_name', document.getElementById('model-select').value);
 
     try {
-        const response = await fetch('http://localhost:8000/upload/', {
+        const response = await fetch('/upload/', {
             method: 'POST',
             body: formData
         });
@@ -43,7 +38,7 @@ function monitorTask(taskId) {
     const processingStatus = document.getElementById('processing-status');
     const originalImg = document.getElementById('original-img');
 
-    fetch(`http://localhost:8000/tasks/${taskId}`)
+    fetch(`/tasks/${taskId}`)
         .then(response => response.json())
         .then(({status, result}) => {
             if (status === 'SUCCESS') {
@@ -92,21 +87,23 @@ function showResult(filePath) {
     });
 }
 
-function initColorPicker(classes = []) {
-    const container = document.getElementById('color-grid');
-    container.innerHTML = '';
-
-    classes.forEach((className, index) => {
-        const color = DEFAULT_COLORS[index % DEFAULT_COLORS.length];
-        const wrapper = document.createElement('div');
-        wrapper.className = 'color-item';
-        wrapper.innerHTML = `
-            <label>${className}</label>
-            <input type="color" value="${color}">
-        `;
-        container.appendChild(wrapper);
-    });
-}
+// function initColorPicker(classes = []) {
+//     const dropdownHeader = document.querySelector('.dropdown-header');
+//     const container = document.getElementById('color-list');
+//
+//     container.innerHTML = '';
+//
+//     classes.forEach((className, index) => {
+//         const color = DEFAULT_COLORS[index % DEFAULT_COLORS.length];
+//         const wrapper = document.createElement('div');
+//         wrapper.className = 'color-item';
+//         wrapper.innerHTML = `
+//             <label>${className}</label>
+//             <input type="color" value="${color}">
+//         `;
+//         container.appendChild(wrapper);
+//     });
+// }
 
 // Обновить функцию toggleCustomModel
 function toggleCustomModel() {
@@ -140,30 +137,25 @@ document.getElementById('file-input').addEventListener('change', function (e) {
 let currentClasses = [];
 
 // Загрузка доступных моделей при старте
-function loadAvailableModels() {
+async function loadAvailableModels() {
     try {
-        const response = fetch('/api/models');
+        const response = await fetch('/api/models');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const models = response.json();
+        const models = await response.json();
 
         const modelSelect = document.getElementById('model-select');
         modelSelect.innerHTML = ''; // Полная очистка списка
-
-        // Добавляем дефолтную опцию
-        const defaultOption = new Option('Select a model...', '');
-        defaultOption.disabled = true;
-        defaultOption.selected = true;
-        modelSelect.add(defaultOption);
 
         // Добавляем кастомную опцию
         modelSelect.add(new Option('Custom Model', 'custom'));
 
         // Добавляем существующие модели
         models.forEach(model => {
+            const classCount = Object.keys(model.classes).length;
             const option = new Option(
-                `${model.name} (${model.classes.length} classes)`,
+                `${model.name} (${classCount} classes)`,
                 model.name
             );
             modelSelect.add(option);
@@ -192,21 +184,44 @@ async function parseYamlConfig(event) {
     }
 }
 
-function updateColorPicker(classes, colors = {}) {
-    const colorGrid = document.getElementById('color-grid');
-    colorGrid.innerHTML = '';
+function rgbToHex(rgbArray) {
+    return '#' + rgbArray.map(x => {
+        const val = Math.max(0, Math.min(255, x));
+        return val.toString(16).padStart(2, '0');
+    }).join('');
+}
 
-    classes.forEach((className, index) => {
-        const defaultColor = DEFAULT_COLORS[index % DEFAULT_COLORS.length];
-        const color = colors[className] || defaultColor;
+function updateColorPicker(classes, colors) {
+    const dropdownHeader = document.querySelector('.dropdown-toggle');
+    const colorList = document.getElementById('color-list');
 
-        const div = document.createElement('div');
-        div.className = 'color-item';
-        div.innerHTML = `
-            <label>${className}</label>
-            <input type="color" value="${color}">
+    // Очищаем предыдущие элементы
+    colorList.innerHTML = '';
+
+    // Создаем элементы списка
+    for (let i = 0; i < colors.length; i++) {
+        const color = colors[i];
+        const className = classes[i];
+
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'color-item';
+        itemDiv.innerHTML = `
+            <input type="color" value="${rgbToHex(color)}">
+            <span>${className}</span>
         `;
-        colorGrid.appendChild(div);
+        colorList.appendChild(itemDiv);
+    }
+
+    // Добавляем обработчики событий
+    dropdownHeader.addEventListener('click', () => {
+        colorList.classList.toggle('show');
+    });
+
+    // Закрываем список при клике вне области
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.color-dropdown')) {
+            colorList.classList.remove('show');
+        }
     });
 }
 
@@ -227,9 +242,10 @@ async function loadModelClasses(modelName) {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+    setupEventListeners();
+    // initColorPicker();
     try {
-        loadAvailableModels();
-        initColorPicker();
+        await loadAvailableModels();
         document.getElementById('model-select').value = '';
     } catch (error) {
         console.error('Initialization error:', error);
