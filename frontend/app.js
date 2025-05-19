@@ -12,15 +12,22 @@ async function processFile() {
     // Добавить файлы для кастомной модели
     if (modelType === 'custom') {
         formData.append('custom_weights', document.getElementById('weights-file').files[0]);
-        formData.append('custom_config', document.getElementById('config-file').files[0]);
     }
     if (fileInput.files[0]) {
-        formData.append('file', fileInput.files[0]);
+        const file = fileInput.files[0]
+        formData.append('file', file);
+        console.log(file)
     }
-
-    formData.append('confidence', document.getElementById('confidence').value);
-    formData.append('model_name', document.getElementById('model-select').value);
-
+    const conf = document.getElementById('confidence').value
+    formData.append('confidence', conf);
+    console.log(conf)
+    const model_name = document.getElementById('model-select').value
+    formData.append('model_name', model_name);
+    console.log(model_name)
+    const colorItems = document.querySelectorAll('.color-item input[type="color"]');
+    const colorsRGB = Array.from(colorItems).map(input => hexToRgb(input.value));
+    console.log(colorsRGB)
+    formData.append("colors", JSON.stringify(colorsRGB))
     try {
         const response = await fetch('/upload/', {
             method: 'POST',
@@ -168,27 +175,21 @@ async function loadAvailableModels() {
     }
 }
 
-// Парсинг YAML конфига
-async function parseYamlConfig(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-        const yamlText = await file.text();
-        const config = jsyaml.load(yamlText);
-        currentClasses = config.names || [];
-        updateColorPicker(currentClasses); // Используем цвета по умолчанию
-    } catch (error) {
-        alert('Error parsing YAML file: ' + error.message);
-        event.target.value = '';
-    }
-}
-
 function rgbToHex(rgbArray) {
     return '#' + rgbArray.map(x => {
         const val = Math.max(0, Math.min(255, x));
         return val.toString(16).padStart(2, '0');
     }).join('');
+}
+
+function hexToRgb(hex) {
+    hex = hex.replace(/^#/, '');
+
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    return [r, g, b];
 }
 
 function updateColorPicker(classes, colors) {

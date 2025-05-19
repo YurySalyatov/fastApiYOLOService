@@ -99,27 +99,24 @@ def load_model(model_name: str):
         return YOLO('yolo12s.yaml').load('yolo12s.pt')
 
     model_path = settings.MODELS_FOLDER / f"{model_name}.pt"
-    yaml_path = settings.MODELS_FOLDER / f"{model_name}.yaml"
     if not model_path.exists():
         raise ValueError(f"Model {model_name} not found")
 
-    if not yaml_path.exists():
-        raise ValueError(f"Yaml for {model_name} not found")
-
-    return YOLO(yaml_path).load(model_path)
+    return YOLO(model_path)
 
 
-def process_image(model, input_path: str,
-                  output_path: str, co):
+def process_image(model, classes, colors, input_path: str,
+                  output_path: str, confidence=0.5):
     frame = cv2.imread(input_path)
     results = process_frame(model, frame)
-    frame = draw_detections(model, frame, results)
+    frame = draw_detections(frame, results, confidence, classes, colors)
     cv2.imwrite(output_path, frame)
     cv2.destroyAllWindows()
 
 
 def process_video(model, classes, colors, input_path: str,
                   output_path: str,
+                  confidence=0.5,
                   show_live: bool = False):
     """
     Process video file and save annotated results
@@ -145,7 +142,7 @@ def process_video(model, classes, colors, input_path: str,
             break
 
         results = process_frame(model, frame)
-        frame = draw_detections(frame, results, classes, colors)
+        frame = draw_detections(frame, results, confidence, classes, colors)
 
         if show_live:
             cv2.imshow('Video Processing', frame)

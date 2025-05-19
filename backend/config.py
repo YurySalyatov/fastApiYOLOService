@@ -9,6 +9,8 @@ class Settings:
     PROCESSED_FOLDER = BASE_DIR / "shared_volume/processed"
     MODELS_FOLDER = BASE_DIR / "shared_volume/models"
     # MODELS_FOLDER = Path("/app/" + str(MODELS_FOLDER))
+    DEFAULT_COLORS = []
+    DEFAULT_CUSTOM_WEIGHTS = None
     MAX_FILE_SIZE = 1024 * 1024 * 1024  # 1GB
     DEFAULT_MODEL = "yolo12s"
 

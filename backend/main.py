@@ -44,11 +44,19 @@ async def redirect():
 @app.post("/upload/")
 async def upload_file(
         file: UploadFile = File(...),
-        confidence: float = Form(0.5),
+        confidence: str = Form(0.5),
         model_name: str = Form(settings.DEFAULT_MODEL),
+        colors: str = Form(settings.DEFAULT_COLORS),
+        custom_weights: UploadFile = File(settings.DEFAULT_CUSTOM_WEIGHTS)
 ):
     # Сохранение файла
+    if colors is None:
+        colors = []
+    else:
+        colors = json.loads(colors)
+    confidence = float(confidence)
     file_ext = Path(file.filename).suffix.lower()
+
     if file_ext not in [".jpg", ".jpeg", ".png", ".mp4"]:
         raise HTTPException(400, "Unsupported file format")
 
@@ -63,9 +71,9 @@ async def upload_file(
 
     # Обработка задачи
     if file_ext == '.mp4':
-        task = process_video_task.si(str(file_path), confidence, model_name)
+        task = process_video_task.si(str(file_path), confidence, model_name, colors)
     else:
-        task = process_image_task.si(str(file_path), confidence, model_name)
+        task = process_image_task.si(str(file_path), confidence, model_name, colors)
     result = task.delay()
     return JSONResponse({"task_id": result.id})
 
@@ -92,18 +100,20 @@ def cleanup_files():
 
 
 @celery.task(name="process_image_task")
-def process_image_task(input_path, confidence, model_name):
+def process_image_task(input_path, confidence, model_name, colors):
     output_path = settings.PROCESSED_FOLDER / f"processed_{Path(input_path).name}"
     model = load_model(model_name)
-    process_image(input_path, output_path, model, confidence)
+    classes = model.names
+    process_image(model, classes, colors, input_path, output_path, confidence)
     return str(output_path)
 
 
 @celery.task(name="process_video_task")
-def process_video_task(input_path, confidence, model_name):
+def process_video_task(input_path, confidence, model_name, colors):
     output_path = settings.PROCESSED_FOLDER / f"processed_{Path(input_path).name}"
     model = load_model(model_name)
-    process_video(input_path, output_path, model, confidence)
+    classes = model.names
+    process_video(model, classes, colors, input_path, output_path, confidence)
     return str(output_path)
 
 
