@@ -41,43 +41,42 @@ async function processFile() {
     }
 }
 
-function monitorTask(taskId) {
+async function monitorTask(taskId) {
     const processingStatus = document.getElementById('processing-status');
     const originalImg = document.getElementById('original-img');
-
-    fetch(`/tasks/${taskId}`)
-        .then(response => response.json())
-        .then(({status, result}) => {
-            if (status === 'SUCCESS') {
-                processingStatus.style.display = 'none';
-                showResult(result);
-            } else if (status === 'FAILURE') {
-                processingStatus.textContent = 'Error!';
-            } else {
-                processingStatus.style.display = 'block';
-                originalImg.style.display = 'block';
-                setTimeout(() => monitorTask(taskId), 2000);
-            }
-        });
+    console.log(`monitoring ${taskId}`)
+    const resp= await fetch(`/api/tasks/${taskId}`)
+    const resp_json = await resp.json()
+    const status = resp_json.status
+    if (status === 'SUCCESS') {
+        processingStatus.style.display = 'none';
+        showResult(resp_json.result);
+    } else if (status === 'FAILURE') {
+        processingStatus.textContent = 'Error!';
+    } else {
+        processingStatus.style.display = 'block';
+        originalImg.style.display = 'block';
+        setTimeout(() => monitorTask(taskId), 2000);
+    }
 }
 
 function showResult(filePath) {
     const isVideo = filePath.endsWith('.mp4');
     if (isVideo) return; // Видео временно не обрабатываем
-
+    console.log(filePath)
     // Показываем оригинал
     const originalImg = document.getElementById('original-img');
     originalImg.style.display = 'block';
-    originalImg.src = `http://localhost:8000/${filePath.replace('processed_', '')}`;
-
+    originalImg.src = `http://localhost:8000/upload/${filePath.replace('processed_', '')}`;
+    console.log(originalImg.src)
     // Показываем кнопки
     document.querySelector('.navigation-buttons').style.display = 'flex';
 
     // Обработанное изображение
     const processedImg = document.getElementById('processed-img');
     processedImg.style.display = 'block';
-    processedImg.src = `http://localhost:8000/${filePath}`;
-
+    processedImg.src = `http://localhost:8000/processed/${filePath}`;
+    console.log(processedImg.src)
     // Обработчики кнопок
     document.getElementById('prev-btn').addEventListener('click', () => {
         processedImg.style.display = 'none';
