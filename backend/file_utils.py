@@ -62,7 +62,7 @@ def draw_detections(frame, detections, confidence, classes, colors=DEFAULT_COLOR
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
 
         # Create text label with confidence
-        text = f"{label} {confidence:.2f}"
+        text = f"{label} {conf:.2f}"
 
         # Calculate text position
         (text_width, text_height), _ = cv2.getTextSize(

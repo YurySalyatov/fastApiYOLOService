@@ -75,13 +75,15 @@ async def upload_file(
     else:
         task = process_image_task.si(str(file_path), confidence, model_name, colors)
     result = task.delay()
+    print("task_id:", result.id)
     return JSONResponse({"task_id": result.id})
 
 
-@app.get("/tasks/{task_id}")
+@app.get("/api/tasks/{task_id}")
 async def get_task_status(task_id: str):
     task = celery.AsyncResult(task_id)
-    return {"status": task.status, "result": task.result if task.ready() else None}
+    print(task.status, task.result if task.ready() else None)
+    return JSONResponse({"status": task.status, "result": task.result if task.ready() else None})
 
 
 @app.on_event("startup")
