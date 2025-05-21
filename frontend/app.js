@@ -1,14 +1,56 @@
+let prevFile = null
+
 function setupEventListeners() {
     document.getElementById('process-btn').addEventListener('click', processFile);
     document.getElementById('confidence').addEventListener('input', updateConfidence);
     document.getElementById('model-select').addEventListener('change', toggleCustomModel);
+    document.getElementById('file-input').addEventListener('change', updateFile);
 }
+
+function updateFile(e) {
+    const file = e.target.files[0];
+    if (!file) {
+        return
+    }
+
+    const originalImg = document.getElementById('original-img');
+    const processedImg = document.getElementById('processed-img');
+    const processingStatus = document.getElementById('processing-status');
+
+    const isSameFile = prevFile &&
+        file.name === prevFile.name &&
+        file.size === prevFile.size &&
+        file.lastModified === prevFile.lastModified;
+
+    if (isSameFile) {
+        return;
+    }
+
+    URL.revokeObjectURL(originalImg.src);
+    processedImg.style.display = 'none';
+    processedImg.src = '';
+    processingStatus.style.display = 'none';
+    document.getElementById('preset-files').value = '';
+
+    const url = URL.createObjectURL(file);
+    originalImg.style.display = 'block';
+    originalImg.src = url;
+
+    prevFile = {
+        name: file.name,
+        size: file.size,
+        lastModified: file.lastModified,
+        inputFiles: e.target.files // Сохраняем весь FileList
+    };
+}
+
 
 async function processFile() {
     const formData = new FormData();
     const fileInput = document.getElementById('file-input');
     const modelType = document.getElementById('model-select').value;
-
+    const processedImg = document.getElementById('processed-img');
+    processedImg.src = ''
     // Добавить файлы для кастомной модели
     if (modelType === 'custom') {
         formData.append('custom_weights', document.getElementById('weights-file').files[0]);
@@ -45,7 +87,7 @@ async function monitorTask(taskId) {
     const processingStatus = document.getElementById('processing-status');
     const originalImg = document.getElementById('original-img');
     console.log(`monitoring ${taskId}`)
-    const resp= await fetch(`/api/tasks/${taskId}`)
+    const resp = await fetch(`/api/tasks/${taskId}`)
     const resp_json = await resp.json()
     const status = resp_json.status
     if (status === 'SUCCESS') {
@@ -62,35 +104,19 @@ async function monitorTask(taskId) {
 
 function showResult(filePath) {
     const isVideo = filePath.endsWith('.mp4');
-    if (isVideo) return; // Видео временно не обрабатываем
+    if (isVideo) return;
+
     console.log(filePath)
-    // Показываем оригинал
+    console.log(filePath)
     const originalImg = document.getElementById('original-img');
     originalImg.style.display = 'block';
-    originalImg.src = `http://localhost:8000/upload/${filePath.replace('processed_', '')}`;
+    originalImg.src = `/uploads/${filePath.replace('processed_', '')}`;
     console.log(originalImg.src)
-    // Показываем кнопки
-    document.querySelector('.navigation-buttons').style.display = 'flex';
 
-    // Обработанное изображение
     const processedImg = document.getElementById('processed-img');
     processedImg.style.display = 'block';
-    processedImg.src = `http://localhost:8000/processed/${filePath}`;
+    processedImg.src = `/processed/${filePath}`;
     console.log(processedImg.src)
-    // Обработчики кнопок
-    document.getElementById('prev-btn').addEventListener('click', () => {
-        processedImg.style.display = 'none';
-        originalImg.style.display = 'block';
-        document.getElementById('prev-btn').disabled = true;
-        document.getElementById('next-btn').disabled = false;
-    });
-
-    document.getElementById('next-btn').addEventListener('click', () => {
-        processedImg.style.display = 'block';
-        originalImg.style.display = 'none';
-        document.getElementById('prev-btn').disabled = false;
-        document.getElementById('next-btn').disabled = true;
-    });
 }
 
 // function initColorPicker(classes = []) {
@@ -130,15 +156,6 @@ function toggleCustomModel() {
 function updateConfidence(e) {
     document.getElementById('confidence-value').textContent = e.target.value;
 }
-
-document.getElementById('file-input').addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    const originalImg = document.getElementById('original-img');
-    const url = URL.createObjectURL(file);
-
-    originalImg.style.display = 'block';
-    originalImg.src = url;
-});
 
 let currentClasses = [];
 

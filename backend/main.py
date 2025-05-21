@@ -107,7 +107,7 @@ def process_image_task(input_path, confidence, model_name, colors):
     model = load_model(model_name)
     classes = model.names
     process_image(model, classes, colors, input_path, output_path, confidence)
-    return str(output_path)
+    return f"processed_{Path(input_path).name}"
 
 
 @celery.task(name="process_video_task")

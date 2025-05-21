@@ -142,29 +142,6 @@ input[type="color"] {
     font-weight: bold;
 }
 
-.navigation-buttons {
-    position: absolute;
-    bottom: -40px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 10px;
-}
-
-.navigation-buttons button {
-    padding: 8px 20px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.navigation-buttons button:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-}
-
 /* Скрываем видео-секцию по умолчанию */
 .video-results {
     display: none !important;
