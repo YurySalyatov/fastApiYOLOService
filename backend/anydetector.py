@@ -173,11 +173,36 @@ def dangerous_detection(boxes_names_frames, id, time, storage):
     return True, message
 
 
-# def couriers_detection(boxes_names_frames, id, time, storage):
-#     dict = {}
-#     for box in boxes_names_frames:
-#         for key in box.keys():
+def couriers_detection(boxes_names_frames, id, time, storage):
+    prev_detected = storage.get('prev_detected', {})
+    prev_couriers = prev_detected.get('hunan-couriers', 0)
+    prev_robot = prev_detected.get('robot-couriers', 0)
+    couriers = 0
+    robots = 0
+    for box in boxes_names_frames:
+        couriers = max(len(box.get('human-courier', [])), couriers)
+        robots = max(len(box.get('robot-courier', [])), robots)
+    if couriers == 0 and robots == 0:
+        prev_detected['hunan-couriers'] = 0
+        prev_detected['robot-couriers'] = 0
+        storage['prev_detected'] = prev_detected
+        return False, None
+    if prev_couriers >= couriers and prev_robot >= robots:
+        return False, None
+    message = f"Detector {id}."
+    if couriers > prev_couriers:
+        message += f" Detected more human couriers: {couriers}."
+    if robots > prev_robot:
+        message += f"Detected more robot couriers: {robots}"
+    message += f" Detection at {time}"
+    prev_detected['human-courier'] = couriers
+    prev_detected['robot-courier'] = robots
+    storage['prev_detected'] = prev_detected
+    return True, message
+
+# def package_detection(boxes_names_frames, id, time, storage):
 #
+
 
 default_logs = Destination("shared_volume/logs/default_logs.txt")
 default_detector = AnyDetector(0, [], "default", default_logs)
@@ -196,13 +221,14 @@ phone_detector = AnyDetector(3, [phone_detection], 'phone detector', phone_logs)
 dangerous_logs = Destination("shared_volume/dangerous_logs.txt")
 dangerous_detector = AnyDetector(4, [dangerous_detection], 'dangerous detector', dangerous_logs)
 
-# couriers_logs = Destination("shared_volume/logs/couriers_logs.txt")
-# couriers_detector = AnyDetector(5, [couriers_detections], 'couriers detector', couriers_logs)
+couriers_logs = Destination("shared_volume/logs/couriers_logs.txt")
+couriers_detector = AnyDetector(5, [couriers_detection], 'couriers detector', couriers_logs)
 
 all_detectors = {'fire-smoke': fire_smoke_detector,
                  'trash': trash_detector,
                  'phone': phone_detector,
-                 'mask-stick-knife': dangerous_detector}
+                 'mask-stick-knife': dangerous_detector,
+                 'couriers': couriers_detector}
 
 
 def get_detector(model_name):
