@@ -233,3 +233,118 @@ input[type="color"] {
 .dropdown-toggle.active {
     transform: rotate(180deg);
 }
+
+.camera-section {
+    margin-top: 2rem;
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+}
+
+#camera-preview {
+    width: 100%;
+    max-width: 640px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    background: #000;
+}
+
+#process-frame {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+}
+
+.processing-info {
+    margin-top: 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.camera-preview {
+    position: relative;
+    margin-top: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+}
+
+#camera-preview, #processed-img {
+    max-height: 360px;
+    object-fit: contain;
+}
+
+.processing-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+#process-frame {
+    margin-top: 10px;
+    padding: 8px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#process-frame:hover {
+    background-color: #218838;
+}
+
+#process-frame:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+#start-camera {
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#start-camera:hover {
+    background-color: #0069d9;
+}
+
+.download-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    transition: background-color 0.3s;
+    cursor: pointer;
+}
+
+.download-button:hover {
+    background-color: #218838;
+    color: white;
+}
+
+/* Сообщение о готовности видео */
+.video-ready {
+    padding: 20px;
+    text-align: center;
+    font-size: 18px;
+    color: #28a745;
+    font-weight: bold;
+    line-height: 1.5;
+}

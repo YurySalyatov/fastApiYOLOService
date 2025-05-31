@@ -22,7 +22,6 @@
                 <option value="example2.mp4">Example Video</option>
             </select>
         </div>
-
         <div class="model-selector">
             <h3>2. Model Settings</h3>
             <select id="model-select" onchange="toggleCustomModel()">
@@ -37,7 +36,23 @@
                 </div>
             </div>
         </div>
+        <div class="camera-section">
+            <h3>Live Camera Processing</h3>
+            <button id="start-camera">Enable Camera</button>
+            <div class="camera-preview">
+                <!-- Original Camera Feed -->
+                <video id="camera-preview" autoplay playsinline
+                       style="display: none; width: 100%; max-width: 640px;"></video>
 
+                <!-- Processed Frame Display -->
+                <img id="processed-frame" alt="Processed frame" style="display: none; width: 100%; max-width: 640px;">
+            </div>
+            <button id="process-frame" disabled>Process Frame</button>
+            <div class="processing-info">
+                <span>FPS: <span id="fps-counter">0</span></span>
+                <span>Latency: <span id="latency-counter">0</span>ms</span>
+            </div>
+        </div>
         <div class="processing-settings">
             <h3>3. Processing Parameters</h3>
             <div class="settings-group">
@@ -61,6 +76,7 @@
         </div>
 
         <button id="process-btn">Process</button>
+        <button id="download-btn">Download</button>
     </div>
 
     <div class="results">

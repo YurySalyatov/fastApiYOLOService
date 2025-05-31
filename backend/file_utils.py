@@ -5,6 +5,10 @@ from pathlib import Path
 from typing import List, Tuple
 from config import settings
 from ultralytics import YOLO
+import numpy as np
+import base64
+from shapely.geometry import MultiPolygon, box
+import shapely
 
 DEFAULT_COLORS = [
     (255, 0, 0),  # Red
@@ -13,6 +17,10 @@ DEFAULT_COLORS = [
     (255, 255, 0),  # Yellow
     (128, 0, 128)  # Purple
 ]
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+cashed_model = {}
 
 
 def get_colors(cnt):
@@ -48,11 +56,11 @@ def draw_detections(frame, detections, confidence, classes, colors=DEFAULT_COLOR
     :param detections: list of boxes and labels witch was detected
     :return: frame with labeled objects, if they were detected
     """
+    res = {}
     for box in detections.boxes:
         class_id = int(box.cls)
         label = classes[class_id]
         conf = float(box.conf)
-
         if conf < confidence:  # Confidence threshold
             continue
 
@@ -63,7 +71,10 @@ def draw_detections(frame, detections, confidence, classes, colors=DEFAULT_COLOR
 
         # Create text label with confidence
         text = f"{label} {conf:.2f}"
-
+        if label in res:
+            res[label].append([x1, y1, x2, y2])
+        else:
+            res[label] = [[x1, y1, x2, y2]]
         # Calculate text position
         (text_width, text_height), _ = cv2.getTextSize(
             text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2
@@ -91,27 +102,34 @@ def draw_detections(frame, detections, confidence, classes, colors=DEFAULT_COLOR
             (30, 30, 30),  # Dark gray text
             2
         )
-    return frame
+    return frame, res
 
 
 def load_model(model_name: str):
-    if model_name == settings.DEFAULT_MODEL:
-        return YOLO('yolo12s.yaml').load('yolo12s.pt')
-
-    model_path = settings.MODELS_FOLDER / f"{model_name}.pt"
-    if not model_path.exists():
-        raise ValueError(f"Model {model_name} not found")
-
-    return YOLO(model_path)
+    if model_name not in cashed_model:
+        model_path = settings.MODELS_FOLDER / f"{model_name}.pt"
+        if not model_path.exists():
+            raise ValueError(f"Model {model_name} not found")
+        model = YOLO(model_path)
+        model.to(device)
+        cashed_model[model_name] = model
+        return model
+    return cashed_model[model_name]
 
 
 def process_image(model, classes, colors, input_path: str,
                   output_path: str, confidence=0.5):
     frame = cv2.imread(input_path)
     results = process_frame(model, frame)
-    frame = draw_detections(frame, results, confidence, classes, colors)
+    frame, _ = draw_detections(frame, results, confidence, classes, colors)
     cv2.imwrite(output_path, frame)
     cv2.destroyAllWindows()
+
+
+def return_process_image(model, classes, colors, frame, confidence=0.5):
+    results = process_frame(model, frame)
+    frame, sort_results = draw_detections(frame, results, confidence, classes, colors)
+    return frame, sort_results
 
 
 def process_video(model, classes, colors, input_path: str,
@@ -142,12 +160,7 @@ def process_video(model, classes, colors, input_path: str,
             break
 
         results = process_frame(model, frame)
-        frame = draw_detections(frame, results, confidence, classes, colors)
-
-        if show_live:
-            cv2.imshow('Video Processing', frame)
-            if cv2.waitKey(1) == ord('q'):
-                break
+        frame, _ = draw_detections(frame, results, confidence, classes, colors)
 
         out.write(frame)
 
@@ -160,33 +173,6 @@ def predict(self, img_path, iou=0.4):
     return self.model.predict(source=img_path, imgsz=640, iou=iou)
 
 
-def real_time_processing(model, classes, colors, camera_id: int = 0):
-    """
-    Process live video stream from webcam
-    :param camera_id: webcam device ID (default 0)
-    """
-    cap = cv2.VideoCapture(camera_id)
-    if not cap.isOpened():
-        raise ValueError("Error connecting to camera")
-
-    print("Real-time processing started. Press 'q' to quit.")
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        results = process_frame(model, frame)
-        frame = draw_detections(frame, results, classes, colors)
-
-        cv2.imshow('Live Detection', frame)
-        if cv2.waitKey(1) == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-
 def normalize_colors(user_colors: List[Tuple[int, int, int]], num_classes: int) -> List[Tuple[int, int, int]]:
     if not user_colors:
         return DEFAULT_COLORS[:num_classes]
@@ -196,3 +182,20 @@ def normalize_colors(user_colors: List[Tuple[int, int, int]], num_classes: int) 
         colors.extend(DEFAULT_COLORS)
 
     return colors[:num_classes]
+
+
+def proces_camera(contents, classes, colors, model, confidence):
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    processed_img, boxes = return_process_image(model, classes, colors, img, confidence=confidence)
+
+    # Кодирование результата
+    _, buffer = cv2.imencode('.jpg', processed_img)
+    return buffer, boxes
+
+
+def union_area(list_rectangles):
+    rectangles = [box(x1, y1, x2, y2) for (x1, y1, x2, y2) in list_rectangles]
+    union = shapely.unary_union(rectangles)
+    return union.area

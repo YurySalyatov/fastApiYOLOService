@@ -1,10 +1,16 @@
-let prevFile = null
+let prevFile = null;
+let cameraStream = null;
+let processingInterval = null;
+let isProcessing = false;
 
 function setupEventListeners() {
     document.getElementById('process-btn').addEventListener('click', processFile);
     document.getElementById('confidence').addEventListener('input', updateConfidence);
     document.getElementById('model-select').addEventListener('change', toggleCustomModel);
     document.getElementById('file-input').addEventListener('change', updateFile);
+    document.getElementById('start-camera').addEventListener('click', toggleCamera);
+    document.getElementById('process-frame').addEventListener('click', processCameraFrame);
+    document.getElementById('download-btn').addEventListener('click', downloadFile)
 }
 
 function updateFile(e) {
@@ -37,11 +43,13 @@ function updateFile(e) {
     originalImg.src = url;
 
     prevFile = {
+        origfile: file,
         name: file.name,
         size: file.size,
         lastModified: file.lastModified,
         inputFiles: e.target.files // Сохраняем весь FileList
     };
+    document.getElementById('download-btn').style.display = 'none'
 }
 
 
@@ -71,7 +79,7 @@ async function processFile() {
     console.log(colorsRGB)
     formData.append("colors", JSON.stringify(colorsRGB))
     try {
-        const response = await fetch('/upload/', {
+        const response = await fetch('/upload/file/', {
             method: 'POST',
             body: formData
         });
@@ -104,38 +112,46 @@ async function monitorTask(taskId) {
 
 function showResult(filePath) {
     const isVideo = filePath.endsWith('.mp4');
-    if (isVideo) return;
+    const downloadBtn = document.getElementById('download-btn');
+    if (isVideo) {
+        const processingStatus = document.getElementById('processing-status');
+        processingStatus.style.display = 'none';
 
-    console.log(filePath)
-    console.log(filePath)
+        // Настраиваем кнопку скачивания для видео
+        downloadBtn.href = `/processed/${filePath}`;
+        downloadBtn.download = `processed_${filePath.replace('processed_', '')}`;
+        downloadBtn.textContent = 'Download Video';
+        downloadBtn.style.display = 'block';
+
+        // Показываем сообщение о готовности видео
+        const processedImg = document.getElementById('processed-img');
+        processedImg.style.display = 'block';
+        processedImg.src = ''; // Очищаем предыдущее изображение
+        processedImg.alt = 'Video processing complete';
+        processedImg.style.width = 'auto';
+        processedImg.style.height = 'auto';
+        processedImg.style.objectFit = 'none';
+        processedImg.innerHTML = '<div class="video-ready">Video processing complete!<br>Click "Download Video" to get the result.</div>';
+
+        return
+    }
+
+    // console.log(filePath)
+    // console.log(filePath)
     const originalImg = document.getElementById('original-img');
     originalImg.style.display = 'block';
     originalImg.src = `/uploads/${filePath.replace('processed_', '')}`;
-    console.log(originalImg.src)
+    // console.log(originalImg.src)
 
     const processedImg = document.getElementById('processed-img');
     processedImg.style.display = 'block';
     processedImg.src = `/processed/${filePath}`;
-    console.log(processedImg.src)
+    // console.log(processedImg.src)
+    downloadBtn.href = `/processed/${filePath}`;
+    downloadBtn.download = `processed_${filePath.replace('processed_', '')}`;
+    downloadBtn.textContent = 'Download Image';
+    downloadBtn.style.display = 'block';
 }
-
-// function initColorPicker(classes = []) {
-//     const dropdownHeader = document.querySelector('.dropdown-header');
-//     const container = document.getElementById('color-list');
-//
-//     container.innerHTML = '';
-//
-//     classes.forEach((className, index) => {
-//         const color = DEFAULT_COLORS[index % DEFAULT_COLORS.length];
-//         const wrapper = document.createElement('div');
-//         wrapper.className = 'color-item';
-//         wrapper.innerHTML = `
-//             <label>${className}</label>
-//             <input type="color" value="${color}">
-//         `;
-//         container.appendChild(wrapper);
-//     });
-// }
 
 // Обновить функцию toggleCustomModel
 function toggleCustomModel() {
@@ -260,7 +276,6 @@ async function loadModelClasses(modelName) {
 
 window.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
-    // initColorPicker();
     try {
         await loadAvailableModels();
         document.getElementById('model-select').value = '';
@@ -269,3 +284,142 @@ window.addEventListener('DOMContentLoaded', async () => {
         alert('Failed to load models. Please refresh the page.');
     }
 });
+
+async function initCamera() {
+    try {
+        const video = document.getElementById('camera-preview');
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: {ideal: 1280},
+                height: {ideal: 720},
+                frameRate: {ideal: 30}
+            }
+        });
+
+        video.srcObject = stream;
+        cameraStream = stream;
+        document.getElementById('process-frame').disabled = false;
+        document.getElementById('start-camera').textContent = 'Disable Camera';
+        document.getElementById('camera-preview').style.display = 'block';
+
+        return true;
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        alert('Cannot access camera: ' + error.message);
+        return false;
+    }
+}
+
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+        document.getElementById('process-frame').disabled = true;
+        document.getElementById('start-camera').textContent = 'Enable Camera';
+        document.getElementById('camera-preview').style.display = 'none';
+        document.getElementById('processed-frame').style.display = 'none';
+    }
+
+    if (processingInterval) {
+        clearInterval(processingInterval);
+        processingInterval = null;
+    }
+}
+
+async function toggleCamera() {
+    if (cameraStream) {
+        stopCamera();
+    } else {
+        const success = await initCamera();
+        if (success) {
+            startFrameProcessing();
+        }
+    }
+}
+
+function startFrameProcessing() {
+    if (processingInterval) return;
+
+    // Обработка кадра каждые 200мс (5 FPS)
+    processingInterval = setInterval(processCameraFrame, 200);
+}
+
+async function processCameraFrame() {
+    if (!cameraStream) return;
+
+    try {
+        const video = document.getElementById('camera-preview');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const blob = await new Promise(resolve =>
+            canvas.toBlob(resolve, 'image/jpeg', 0.95)
+        );
+
+        const formData = new FormData();
+        formData.append('frame', blob, 'frame.jpg');
+        formData.append('confidence', document.getElementById('confidence').value);
+        formData.append('model_name', document.getElementById('model-select').value);
+
+        const colorItems = document.querySelectorAll('.color-item input[type="color"]');
+        const colorsRGB = Array.from(colorItems).map(input => hexToRgb(input.value));
+        formData.append('colors', JSON.stringify(colorsRGB));
+
+        const response = await fetch('/upload/process_frame/', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        updateCameraResult(result);
+
+    } catch (error) {
+        console.error('Frame processing error:', error);
+    }
+}
+
+function updateCameraResult(result) {
+    const processedImg = document.getElementById('processed-frame');
+
+    // Если результат - base64 изображение
+    if (result.processed_frame) {
+        processedImg.src = `data:image/jpeg;base64,${result.processed_frame}`;
+        processedImg.style.display = 'block';
+    }
+    // Если результат - URL файла
+    else if (result.file_path) {
+        processedImg.src = `/processed/${result.file_path}`;
+        processedImg.style.display = 'block';
+    }
+
+    // Обновляем счетчики
+    if (result.latency) {
+        document.getElementById('latency-counter').textContent = result.latency;
+    }
+}
+
+function downloadFile() {
+    const processedFile = document.getElementById('processed-img')
+    // Создаем временную ссылку
+    const url = URL.createObjectURL();
+    const a = document.createElement('a');
+
+    // Настраиваем ссылку
+    a.href = url;
+    a.download = processedFile.name; // Имя файла
+    a.style.display = 'none';
+
+    // Добавляем в DOM и эмулируем клик
+    document.body.appendChild(a);
+    a.click();
+
+    // Убираем ссылку и освобождаем память
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+}
