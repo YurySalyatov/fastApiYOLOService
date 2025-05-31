@@ -105,6 +105,9 @@ def trash_detection(boxes_names_frames, id, time, storage):
     return True, message
 
 
+MAX_TIME_DELTA = 72000
+
+
 def long_trash_detection(boxes_names_frames, id, time, storage):
     last_detected = storage.get('last_detected', {})
     dict = {}
@@ -115,14 +118,66 @@ def long_trash_detection(boxes_names_frames, id, time, storage):
         return False, None
     message = f"Detector {id}. Detect trash: "
     for key in dict.keys():
-        if last_detected[key] != dict[key]:
-            last_detected[key] = time
-        message += f'{key} {dict[key]},'
+        last_detected[key] = time
+    for key in last_detected.keys():
+        if key not in dict and time - last_detected[key] > MAX_TIME_DELTA:
+            message += f'{key} to many times not clear: {time - last_detected[key]},'
     message = message[:-1]
     message += f'. Detection at {time}\n'
     storage['last_detected'] = last_detected
     return True, message
 
+
+def trash_disappear(boxes_names_frames, id, time, storage):
+    prev_detected = storage.get('prev_detected', {})
+    message = f"Detector {id}. Detect trash: "
+    add = False
+    for key in prev_detected.keys():
+        if prev_detected[key] == 0:
+            message += f'{key} was successfully cleared,'
+            add = True
+    if not add:
+        return False, None
+    message = message[:-1]
+    message += f'. Detection at {time}\n'
+    return True, message
+
+
+def phone_detection(boxes_names_frames, id, time, storage):
+    prev_detected = storage.get('prev_detected', 0)
+    detected_phones = 0
+    for box in boxes_names_frames:
+        detected_phones = max(detected_phones, len(box.get('cellphone - v1 2024-06-24 2-21pm')))
+    if detected_phones == 0 or prev_detected == detected_phones:
+        return False, None
+    storage['prev_detected'] = detected_phones
+    return True, (f"Detector {id}. Detect phones {detected_phones}. "
+                  f"Detection at {time}\n")
+
+
+def dangerous_detection(boxes_names_frames, id, time, storage):
+    prev_detected = storage.get('prev_detected', {})
+    dict = {}
+    for box in boxes_names_frames:
+        for key in box:
+            dict[key] = max(dict.get(key, 0), len(box[key]))
+    if len(dict) == 0:
+        return False, None
+    message = f"Detector {id}. Detect dangerous things: "
+    for key in dict.keys():
+        prev_detected[key] = dict[key]
+        message += f'{key} {dict[key]},'
+    message = message[:-1]
+    message += f'. Detection at {time}\n'
+    storage['prev_detected'] = prev_detected
+    return True, message
+
+
+# def couriers_detection(boxes_names_frames, id, time, storage):
+#     dict = {}
+#     for box in boxes_names_frames:
+#         for key in box.keys():
+#
 
 default_logs = Destination("shared_volume/logs/default_logs.txt")
 default_detector = AnyDetector(0, [], "default", default_logs)
@@ -133,8 +188,21 @@ fire_smoke_detector = AnyDetector(1, [fire_appear, smoke_appear, fire_smoke_disa
                                   fire_smoke_logs)
 
 trash_logs = Destination("shared_volume/logs/trash_logs.txt")
-trash_detector = AnyDetector(2, [trash_detection], 'trash detector', trash_logs)
-all_detectors = {'fire-smoke': fire_smoke_detector}
+trash_detector = AnyDetector(2, [trash_detection, long_trash_detection, trash_disappear], 'trash detector', trash_logs)
+
+phone_logs = Destination("shared_volume/logs/phone_logs.txt")
+phone_detector = AnyDetector(3, [phone_detection], 'phone detector', phone_logs)
+
+dangerous_logs = Destination("shared_volume/dangerous_logs.txt")
+dangerous_detector = AnyDetector(4, [dangerous_detection], 'dangerous detector', dangerous_logs)
+
+# couriers_logs = Destination("shared_volume/logs/couriers_logs.txt")
+# couriers_detector = AnyDetector(5, [couriers_detections], 'couriers detector', couriers_logs)
+
+all_detectors = {'fire-smoke': fire_smoke_detector,
+                 'trash': trash_detector,
+                 'phone': phone_detector,
+                 'mask-stick-knife': dangerous_detector}
 
 
 def get_detector(model_name):
