@@ -16,3 +16,5 @@ shapely>=2.1.1
 pytest>=8.3.5
 pytest-asyncio>=1.0.0
 httpx>=0.28.1
+anyio>=4.2.0
+websockets>=15.0.1
