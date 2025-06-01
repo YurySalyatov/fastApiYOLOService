@@ -1,0 +1,4 @@
+Detector 1. Detect more fires: was 0 fires, became 1. Square of fire:19038.0 Detection at 1748636045.1725829
+Detector 1. Detect more fires: was 0 fires, became 1. Square of fire:1728.0 Detection at 1748636046.4510646
+Detector 1. Detect more fires: was 1 fires, became 2. Square of smoke:212577.0 Detection at 1748636046.4510646
+Detector 1. Detect more fires: was 0 fires, became 2. Square of fire:4037.0 Detection at 1748636047.0514376
