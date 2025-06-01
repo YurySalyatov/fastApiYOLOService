@@ -18,7 +18,14 @@ from anydetector import get_detector
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-celery = Celery(__name__, broker=settings.REDIS_URL, backend=settings.REDIS_URL)
+celery = Celery(__name__,
+                broker=settings.REDIS_URL,
+                backend=settings.REDIS_URL,
+                # task_serializer='pickle',
+                # result_serializer='pickle',
+                # accept_content=['pickle', 'json'],
+                # event_serializer='pickle'
+                )
 
 if __name__ == "__main__":
     import uvicorn
@@ -45,7 +52,7 @@ async def redirect():
 
 
 @app.get("/health")
-def health_check():
+async def health_check():
     return {"status": "ok"}
 
 
@@ -139,17 +146,11 @@ async def process_live_frame(
         colors: str = Form(...)
 ):
     try:
-        print("here")
         contents = await frame.read()
-        print("here1")
         model = load_model(model_name)
-        print("here2")
         detector = get_detector(model_name)
-        print("here3")
         classes = model.names
-        print("here4")
         buffer, boxes = return_process_image(model, classes, colors, contents, confidence)
-        print("here5")
         last_frames.append(boxes)
         if len(last_frames) >= MAX_CAPACITY:
             task = detect_list_of_frames.si(detector, last_frames[:])
