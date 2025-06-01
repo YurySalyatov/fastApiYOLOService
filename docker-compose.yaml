@@ -13,6 +13,12 @@ services:
       - app-network
     depends_on:
       - backend
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     build: ./backend
@@ -27,6 +33,12 @@ services:
       - app-network
     depends_on:
       - redis
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   redis:
     image: redis:alpine
@@ -34,6 +46,11 @@ services:
       - redis_data:/data
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   celery_worker:
     build: ./backend
@@ -47,6 +64,35 @@ services:
     depends_on:
       - redis
       - backend
+    healthcheck:
+      test: [ "CMD", "celery", "-A", "main.celery", "inspect", "ping" ]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
+  integration-tests:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./tests:/app/tests
+      - ./shared_volume:/app/shared_volume
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    command: >
+      sh -c "pip install pytest httpx websockets Pillow &&
+             pytest tests/integration -v"
+    depends_on:
+      frontend:
+        condition: service_healthy
+#      backend:
+#        condition: service_healthy
+      celery_worker:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
 
 volumes:
   redis_data:

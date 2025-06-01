@@ -41,7 +41,12 @@ Path(settings.MODELS_FOLDER).mkdir(exist_ok=True, parents=True)
 
 @app.get("/", include_in_schema=False)
 async def redirect():
-    return RedirectResponse("/docs")
+    return RedirectResponse("/health")
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
 
 @app.post("/upload/file/")

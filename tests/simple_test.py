@@ -7,12 +7,12 @@ from backend.file_utils import return_process_image, DEFAULT_COLORS
 from ultralytics import YOLO
 
 
-def frames_detected():
-    print("test1")
+def test_frames_detected():
+    # print("test1")
     fire_detector = get_detector('fire-smoke')
     frames_dir = 'test_dir/frames'
     frames = []
-    print(os.getcwd())
+    # print(os.getcwd())
     model = YOLO("../shared_volume/models/fire-smoke.pt")
     for filename in os.listdir(frames_dir):
         frame = cv2.imread(os.path.join(frames_dir, filename))
@@ -26,4 +26,4 @@ def frames_detected():
     fire_detector.detect_frames(frames, time.time())
 
 
-frames_detected()
+# frames_detected()
