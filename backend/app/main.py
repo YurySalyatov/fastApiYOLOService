@@ -2,7 +2,7 @@ import uuid
 import time
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.responses import RedirectResponse
 from celery import Celery
 from apscheduler.schedulers.background import BackgroundScheduler

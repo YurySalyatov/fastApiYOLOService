@@ -1,13 +1,10 @@
 import cv2
 import torch
-import yaml
-from pathlib import Path
 from typing import List, Tuple
-from config import settings
+from backend.app.config import settings
 from ultralytics import YOLO
 import numpy as np
-import base64
-from shapely.geometry import MultiPolygon, box
+from shapely.geometry import box
 import shapely
 
 DEFAULT_COLORS = [

@@ -4,7 +4,6 @@ import numpy as np
 from pathlib import Path
 from file_utils import load_model, draw_detections, process_frame, union_area, DEFAULT_COLORS
 
-
 @pytest.fixture(scope="module")
 def test_image():
     image_path = Path(__file__).parent / "test_dir" / "fire_example.png"

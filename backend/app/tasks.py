@@ -3,7 +3,7 @@ import time
 import cv2
 import numpy as np
 from celery import Celery
-from file_utils import return_process_image, load_model
+from backend.app.file_utils import return_process_image, load_model
 from config import settings
 from file_utils import process_image, process_video
 from pathlib import Path

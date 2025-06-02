@@ -87,7 +87,7 @@ project/
    ```
 2. **Build and launch service**
     ```bash
-   docker-compose up --build
+   docker-compose up -d --build
     ```
 3. **Access service**
    open `https://localhost:80`
@@ -95,7 +95,14 @@ project/
     ```bash
     docker-compose ps
     ```
-
+5. **Test service**
+   ```bash
+   docker-compose exec backend pytest .
+   ```
+6. **Shutdown service**
+   ```bash
+   docker-compose down
+   ```
 ## Usage Guide
 
 ### Web Interface
@@ -166,7 +173,7 @@ Follow these steps to process media files through the web interface:
 | `colors`         | JSON   | Array of custom colors [[R,G,B], ...]               | No       |
 | `custom_weights` | File   | Custom model weights (.pt file)                     | No       |
 
-**Example Request**:
+#### Example Request:
 
 ```bash
 curl -X POST http://localhost/upload/file/ \
@@ -176,7 +183,7 @@ curl -X POST http://localhost/upload/file/ \
   -F "colors=[[255,0,0],[0,255,0]]"
 ```
 
-**Example Response**
+#### Example Response
 
 ```json
 {
@@ -205,15 +212,15 @@ monitor the progress of media processing operations initiated through the `/uplo
 | `SUCCESS` | Completed  | Processing finished successfully     |
 | `FAILURE` | Failed     | Processing encountered an error      |
 
-**Example Request**
+#### Example Request
 
 ```bash
 curl http://localhost/api/tasks/550e8400-e29b-41d4-a716-446655440000
 ```
 
-**Response Examples**
+#### Response Examples
 
-***Success Case:***
+#### Success Case:
 
 ```json
 {
@@ -222,7 +229,7 @@ curl http://localhost/api/tasks/550e8400-e29b-41d4-a716-446655440000
 }
 ```
 
-***In Progress:***
+#### In Progress:
 
 ```json
 {
@@ -231,7 +238,7 @@ curl http://localhost/api/tasks/550e8400-e29b-41d4-a716-446655440000
 }
 ```
 
-***Failed Case:***
+#### Failed Case:
 
 ```json
 {
@@ -266,7 +273,7 @@ processing parameters.
 curl http://localhost/api/models
 ```
 
-**Response**
+#### Example Response
 
 ```json
 [
@@ -325,3 +332,18 @@ curl -X POST http://localhost/camera_upload/process_frame/ \
   -F "colors=[[255,0,0],[0,255,0]]"
 ```
 
+#### Example Response
+
+```json
+{
+  "processed_frame": "/9j/4AAQSkZJRgABAQEAYABgAAD...",
+  "timestamp": 1717182000
+}
+```
+
+#### Response Fields
+
+| Name              | Type          | Description                      | Example                          |
+|-------------------|---------------|----------------------------------|----------------------------------|
+| `processed_frame` | Base64 String | Image frame to process in base64 | "/9j/4AAQSkZJRgABAQEAYABgAAD..." |
+| `timestamp`       | Int           | Time when processed ended0       | 1717182000                       |

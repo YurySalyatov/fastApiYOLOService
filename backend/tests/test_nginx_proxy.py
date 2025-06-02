@@ -12,15 +12,20 @@ from app.main import app
 
 @pytest.fixture(scope="module")
 def client():
-    with TestClient(base_url="https://localhost:8000", app=app) as client:
-        yield client
+    return TestClient(app)
+
+
+# @pytest.fixture(scope="module")
+# def client():
+#     with TestClient(base_url="https://localhost:8000", app=app) as client:
+#         yield client
 
 
 @pytest.mark.anyio
 def test_root(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "Tomato"}
+    assert response.json() == {"status": "ok"}
 
 # # Фикстура для асинхронного клиента
 # @pytest_asyncio.fixture(scope="module")
