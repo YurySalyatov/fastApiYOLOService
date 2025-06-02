@@ -1,11 +1,13 @@
 import cv2
 import torch
 from typing import List, Tuple
-from backend.app.config import settings
 from ultralytics import YOLO
 import numpy as np
 from shapely.geometry import box
 import shapely
+
+from app.config import settings
+
 
 DEFAULT_COLORS = [
     (255, 0, 0),  # Red

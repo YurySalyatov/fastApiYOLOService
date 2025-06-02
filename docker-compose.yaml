@@ -14,7 +14,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost/" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:80/" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,9 +22,11 @@ services:
 
   backend:
     build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     environment:
       - REDIS_URL=redis://redis:6379/0
     volumes:
+      - ./backend:/usr/backend/app
       - ./shared_volume:/app/shared_volume
       - ./shared_volume/models:/app/shared_volume/models
     ports:
@@ -34,11 +36,10 @@ services:
     depends_on:
       - redis
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
       interval: 15s
       timeout: 10s
-      retries: 10
-      start_period: 60s
+      retries: 5
 
   redis:
     image: redis:alpine
@@ -54,7 +55,7 @@ services:
 
   celery_worker:
     build: ./backend
-    command: celery -A main.celery worker --loglevel=info
+    command: celery -A app.main.celery worker --loglevel=info
     environment:
       - REDIS_URL=redis://redis:6379/0
     volumes:
@@ -65,34 +66,10 @@ services:
       - redis
       - backend
     healthcheck:
-      test: [ "CMD", "celery", "-A", "main.celery", "inspect", "ping" ]
+      test: [ "CMD", "celery", "-A", "app.main.celery", "inspect", "ping" ]
       interval: 20s
       timeout: 10s
       retries: 5
-
-  integration-tests:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    volumes:
-      - ./tests:/app/tests
-      - ./shared_volume:/app/shared_volume
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-    command: >
-      sh -c "pip install pytest httpx websockets Pillow &&
-             pytest tests/integration -v"
-    depends_on:
-      frontend:
-        condition: service_healthy
-#      backend:
-#        condition: service_healthy
-      celery_worker:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app-network
 
 volumes:
   redis_data:

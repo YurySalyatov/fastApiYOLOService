@@ -1,6 +1,7 @@
-from file_utils import union_area
 import os
 from pathlib import Path
+from app.file_utils import union_area
+from app.config import settings
 
 
 class Destination:
@@ -200,28 +201,29 @@ def couriers_detection(boxes_names_frames, id, time, storage):
     storage['prev_detected'] = prev_detected
     return True, message
 
+
 # def package_detection(boxes_names_frames, id, time, storage):
 #
 
 
-default_logs = Destination("shared_volume/logs/default_logs.txt")
+default_logs = Destination(settings.LOGS_FOLDER / "default.log")
 default_detector = AnyDetector(0, [], "default", default_logs)
 
-fire_smoke_logs = Destination("shared_volume/logs/fire-smoke_logs.txt")
+fire_smoke_logs = Destination(settings.LOGS_FOLDER / "fire-smoke.log")
 fire_smoke_detector = AnyDetector(1, [fire_appear, smoke_appear, fire_smoke_disappear],
                                   "fire detector",
                                   fire_smoke_logs)
 
-trash_logs = Destination("shared_volume/logs/trash_logs.txt")
+trash_logs = Destination(settings.LOGS_FOLDER / "trash.log")
 trash_detector = AnyDetector(2, [trash_detection, long_trash_detection, trash_disappear], 'trash detector', trash_logs)
 
-phone_logs = Destination("shared_volume/logs/phone_logs.txt")
+phone_logs = Destination(settings.LOGS_FOLDER / "phone.log")
 phone_detector = AnyDetector(3, [phone_detection], 'phone detector', phone_logs)
 
-dangerous_logs = Destination("shared_volume/dangerous_logs.txt")
+dangerous_logs = Destination(settings.LOGS_FOLDER / "dangerous.log")
 dangerous_detector = AnyDetector(4, [dangerous_detection], 'dangerous detector', dangerous_logs)
 
-couriers_logs = Destination("shared_volume/logs/couriers_logs.txt")
+couriers_logs = Destination(settings.LOGS_FOLDER / "couriers.log")
 couriers_detector = AnyDetector(5, [couriers_detection], 'couriers detector', couriers_logs)
 
 all_detectors = {'fire-smoke': fire_smoke_detector,

@@ -1,19 +1,20 @@
 import uuid
 import time
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import JSONResponse
 from fastapi.responses import RedirectResponse
 from celery import Celery
 from apscheduler.schedulers.background import BackgroundScheduler
-from config import settings
-from file_utils import load_model, get_colors, return_process_image
 import json
 from ultralytics import YOLO
 import base64
-from tasks import process_ws_frame, process_image_task, process_video_task, detect_list_of_frames
 import asyncio
-from anydetector import get_detector
+
+from app.config import settings
+from app.anydetector import get_detector
+from app.tasks import process_ws_frame, process_image_task, process_video_task, detect_list_of_frames
+from app.file_utils import load_model, get_colors, return_process_image
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -44,6 +45,22 @@ app.add_middleware(
 Path(settings.UPLOAD_FOLDER).mkdir(exist_ok=True, parents=True)
 Path(settings.PROCESSED_FOLDER).mkdir(exist_ok=True, parents=True)
 Path(settings.MODELS_FOLDER).mkdir(exist_ok=True, parents=True)
+Path(settings.LOGS_FOLDER).mkdir(exist_ok=True, parents=True)
+
+
+@app.on_event("startup")
+async def startup_event():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(cleanup_files, 'interval', minutes=30)
+    scheduler.start()
+
+
+def cleanup_files():
+    now = time.time()
+    for folder in [settings.UPLOAD_FOLDER, settings.PROCESSED_FOLDER]:
+        for file_path in folder.glob('*'):
+            if file_path.is_file() and (now - file_path.stat().st_mtime) > 3600:
+                file_path.unlink()
 
 
 @app.get("/", include_in_schema=False)
@@ -51,9 +68,26 @@ async def redirect():
     return RedirectResponse("/health")
 
 
-@app.get("/health")
+@app.get("/health/")
 async def health_check():
     return {"status": "ok"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    if settings.DEBUG:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": f"Frame processing error: {str(exc)}",
+                "traceback": traceback.format_exc()
+            }
+        )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
 
 
 @app.post("/upload/file/")
@@ -64,11 +98,8 @@ async def upload_file(
         colors: str = Form(settings.DEFAULT_COLORS),
         custom_weights: UploadFile = File(settings.DEFAULT_CUSTOM_WEIGHTS)
 ):
-    # Сохранение файла
-    if colors is None:
-        colors = []
-    else:
-        colors = json.loads(colors)
+    print("testing")
+    colors = json.loads(colors)
     confidence = float(confidence)
     file_ext = Path(file.filename).suffix.lower()
 
@@ -101,24 +132,10 @@ async def get_task_status(task_id: str):
     return JSONResponse({"status": task.status, "result": task.result if task.ready() else None})
 
 
-@app.on_event("startup")
-async def startup_event():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(cleanup_files, 'interval', minutes=30)
-    scheduler.start()
-
-
-def cleanup_files():
-    now = time.time()
-    for folder in [settings.UPLOAD_FOLDER, settings.PROCESSED_FOLDER]:
-        for file_path in folder.glob('*'):
-            if file_path.is_file() and (now - file_path.stat().st_mtime) > 3600:
-                file_path.unlink()
-
-
 @app.get("/api/models")
 def get_available_models():
     models = []
+    print(settings.ROOT)
     models_dir = settings.MODELS_FOLDER
     for pt_file in models_dir.glob("*.pt"):
         model_name = pt_file.stem
@@ -141,21 +158,31 @@ last_frames = []
 @app.post("/camera_upload/process_frame/")
 async def process_live_frame(
         frame: UploadFile = File(...),
-        confidence: float = Form(...),
+        confidence: str = Form(...),
         model_name: str = Form(...),
         colors: str = Form(...)
 ):
     try:
-        contents = await frame.read()
         model = load_model(model_name)
-        detector = get_detector(model_name)
         classes = model.names
-        buffer, boxes = return_process_image(model, classes, colors, contents, confidence)
-        last_frames.append(boxes)
-        if len(last_frames) >= MAX_CAPACITY:
-            task = detect_list_of_frames.si(detector, last_frames[:])
-            result = task.delay()
-            last_frames.clear()
+        colors = json.loads(colors)
+        confidence = float(confidence)
+        file_ext = Path(frame.filename).suffix.lower()
+        # detector = get_detector(model_name)
+        file_id = f"{uuid.uuid4()}{file_ext}"
+        file_path = settings.UPLOAD_FOLDER / file_id
+
+        with open(file_path, "wb") as buffer:
+            content = await frame.read()
+            if len(content) > settings.MAX_FILE_SIZE:
+                raise HTTPException(413, "File too large")
+            buffer.write(content)
+        buffer, boxes = return_process_image(model, classes, colors, file_path, confidence)
+        # last_frames.append(boxes)
+        # if len(last_frames) >= MAX_CAPACITY:
+        #     task = detect_list_of_frames.si(detector, last_frames[:])
+        #     result = task.delay()
+        #     last_frames.clear()
         encoded_frame = base64.b64encode(buffer).decode('utf-8')
         return JSONResponse({
             "processed_frame": encoded_frame,
@@ -163,6 +190,7 @@ async def process_live_frame(
         })
 
     except Exception as e:
+        print(e)
         raise HTTPException(500, f"Frame processing error: {str(e)}")
 
 
