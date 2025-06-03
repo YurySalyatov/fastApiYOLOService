@@ -10,10 +10,11 @@ import json
 from ultralytics import YOLO
 import base64
 import asyncio
+import cv2
+import numpy as np
 
 from app.config import settings, logger
-from app.anydetector import get_detector
-from app.tasks import process_ws_frame, process_image_task, process_video_task, process_camera_frames
+from app.tasks import process_image_task, process_video_task, process_camera_frames
 from app.file_utils import load_model, get_colors, return_process_image
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,13 +57,13 @@ def cleanup_files():
     now = time.time()
     for folder in [settings.UPLOAD_FOLDER, settings.PROCESSED_FOLDER]:
         for file_path in folder.glob('*'):
-            if file_path.is_file() and (now - file_path.stat().st_mtime) > 360:
+            if file_path.is_file() and (now - file_path.stat().st_mtime) > settings.MAX_TIME_FILES_LIVE:
                 file_path.unlink()
 
 
 @app.get("/", include_in_schema=False)
 async def redirect():
-    return RedirectResponse("/health")
+    return RedirectResponse("/health/")
 
 
 @app.get("/health/")
@@ -151,7 +152,7 @@ def get_available_models():
 
 
 MAX_CAPACITY = 10
-last_frames = []
+last_camera_frames = []
 
 
 @app.post("/camera_upload/process_frame/")
@@ -178,11 +179,11 @@ async def process_live_frame(
         model = load_model(model_name)
         classes = model.names
         buffer, boxes = return_process_image(model, classes, colors, file_path, confidence)
-        last_frames.append(boxes)
-        if len(last_frames) >= MAX_CAPACITY:
-            task = process_camera_frames.si(model_name, last_frames[:])
+        last_camera_frames.append(boxes)
+        if len(last_camera_frames) >= MAX_CAPACITY:
+            task = process_camera_frames.si(model_name, last_camera_frames[:])
             task.delay()
-            last_frames.clear()
+            last_camera_frames.clear()
             logger.info("Process 10 frames in /camera_upload/process_frame/")
         encoded_frame = base64.b64encode(buffer).decode('utf-8')
         return JSONResponse({
@@ -195,30 +196,48 @@ async def process_live_frame(
         raise HTTPException(500, f"Frame processing error: {str(e)}")
 
 
-# WebSocket-эндпоинт для потоковой обработки
-@app.websocket("/api/ws/video_feed")
+last_ws_frames = []
+
+
+@app.websocket("/api/ws/video_feed/")
 async def video_feed_websocket(websocket: WebSocket):
     await websocket.accept()
     init_data = await websocket.receive_json()
     model_name = init_data['model_name']
     confidence = init_data['confidence']
     colors = init_data['colors']
+    colors = json.loads(colors)
+    logger.info(
+        f"Used /api/ws/video_feed/ to detect one file model: {model_name}, confidence: {confidence}, colors: {colors}")
     try:
         while True:
             frame_data = await websocket.receive_bytes()
-
-            task = process_ws_frame.delay(
-                frame_data,
-                model_name,
-                confidence,
-                colors
+            logger.info("Receive one frame on websocket")
+            nparr = np.frombuffer(frame_data, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            file_id = f"{uuid.uuid4()}.jpg"
+            file_path = settings.UPLOAD_FOLDER / file_id
+            cv2.imwrite(file_path, frame)
+            model = load_model(model_name)
+            classes = model.names
+            logger.info("Before process")
+            processed, boxex = return_process_image(
+                model,
+                classes,
+                colors,
+                file_path,
+                confidence
             )
-
-            while not task.ready():
-                await asyncio.sleep(0.001)
-
-            result = task.result
-            await websocket.send_bytes(result)
+            logger.info("Return processed from websocket")
+            # Конвертация в bytes
+            _, buffer = cv2.imencode('.jpg', processed)
+            last_ws_frames.append(boxex)
+            if len(last_ws_frames) >= MAX_CAPACITY:
+                task = process_camera_frames.si(model_name, last_ws_frames[:])
+                task.delay()
+                last_ws_frames.clear()
+                logger.info("Process 10 frames in /api/ws/video_feed/")
+            await websocket.send_bytes(buffer.tobytes())
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:

@@ -19,6 +19,8 @@ class Settings:
     DEFAULT_MODEL = "yolo12s"
     # change to false in prod
     DEBUG = True
+    MAX_TIME_FILES_LIVE = 360
+
 
 
 settings = Settings()

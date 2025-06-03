@@ -3,12 +3,14 @@ import pytest
 import pytest_asyncio
 import httpx
 import asyncio
+import shutil
 from PIL import Image
 from io import BytesIO
 import time
 import json
 import websockets
 import base64
+from starlette.testclient import TestClient
 
 from app.config import settings
 
@@ -113,26 +115,29 @@ def test_available_models(test_app):
         assert not dont_exist, f"Expecting found {model_name} model, but not found"
 
 
-# def test_video_feed_websocket():
-#     with websockets.connect("ws://backend:8000/api/ws/video_feed") as ws:
-#         frames_folder = settings.TEST_FOLDER / "frames"
-#         frames = frames_folder.glob("*.jpg")
-#         colors = [(255, 0, 0), (0, 0, 255)]
-#         ws.send(json.dumps({
-#             "model_name": "fire-smoke",
-#             "confidence": 0.5,
-#             "colors": json.dumps(colors)
-#         }))
-#         for frame_file in frames:
-#             with open(frame_file, "rb") as f:
-#                 frame_content = f.read()
-#
-#             ws.send(frame_content)
-#
-#             processed = ws.recv()
-#             assert len(processed) > 0
-#
-#             try:
-#                 base64.b64decode(processed)
-#             except Exception:
-#                 pytest.fail("Invalid base64 image received")
+def test_large_frame_handling(test_app):
+    colors = [(255, 0, 0), (0, 255, 0)]
+    frames_folder = settings.TEST_FOLDER / "frames"
+    test_frames_folder = settings.TEST_FOLDER / "frames/results"
+    test_frames_folder.mkdir(parents=True, exist_ok=True)
+    frames = frames_folder.glob("*.jpg")
+    ln_frames = len(list(frames))
+    with test_app.websocket_connect("/api/ws/video_feed/") as websocket:
+        websocket.send_json({"model_name": "fire-smoke", "confidence": 0.5, "colors": json.dumps(colors)})
+        for frame_file in frames:
+            with open(frame_file, "rb") as f:
+                frame_content = f.read()
+
+            websocket.send_bytes(frame_content)
+            response = websocket.receive_bytes()
+            output_file = test_frames_folder / f"{frame_file.stem}.jpg"
+            try:
+                with open(output_file, "wb") as f:
+                    f.write(response)
+            except Exception:
+                pytest.fail("Invalid bytes image received")
+    test_frames = test_frames_folder.glob("*.jpg")
+    ln_test_frames = len(list(test_frames))
+    assert ln_test_frames > 0, "Nothing be resived"
+    assert ln_test_frames == ln_frames, f"Not enough frames, expected {ln_frames}, but got {ln_test_frames}"
+    shutil.rmtree(test_frames_folder)

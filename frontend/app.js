@@ -95,7 +95,7 @@ async function monitorTask(taskId) {
     const processingStatus = document.getElementById('processing-status');
     const originalImg = document.getElementById('original-img');
     console.log(`monitoring ${taskId}`)
-    const resp = await fetch(`/api/tasks/${taskId}`)
+    const resp = await fetch(`/api/tasks/${taskId}/`)
     const resp_json = await resp.json()
     const status = resp_json.status
     if (status === 'SUCCESS') {
@@ -178,7 +178,7 @@ let currentClasses = [];
 // Загрузка доступных моделей при старте
 async function loadAvailableModels() {
     try {
-        const response = await fetch('/api/models');
+        const response = await fetch('/api/models/');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -260,7 +260,7 @@ function updateColorPicker(classes, colors) {
 
 async function loadModelClasses(modelName) {
     try {
-        const response = await fetch(`/api/models`);
+        const response = await fetch(`/api/models/`);
         const models = await response.json();
         const model = models.find(m => m.name === modelName);
 
@@ -369,7 +369,7 @@ async function processCameraFrame() {
         const colorsRGB = Array.from(colorItems).map(input => hexToRgb(input.value));
         formData.append('colors', JSON.stringify(colorsRGB));
 
-        const response = await fetch('/upload/process_frame/', {
+        const response = await fetch('/camera_upload/process_frame/', {
             method: 'POST',
             body: formData
         });

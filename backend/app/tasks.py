@@ -1,6 +1,4 @@
 import time
-import cv2
-import numpy as np
 from celery import Celery
 from pathlib import Path
 
@@ -30,22 +28,10 @@ def process_video_task(input_path, confidence, model_name, colors):
     return str(output_path)
 
 
-@celery.task(name="process_ws_frame")
-def process_ws_frame(frame_data, model_name, confidence, colors):
-    nparr = np.frombuffer(frame_data, np.uint8)
-    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    model = load_model(model_name)
-    processed = return_process_image(
-        model,
-        model.names,
-        colors,
-        frame,
-        confidence
-    )
-
-    # Конвертация в bytes
-    _, buffer = cv2.imencode('.jpg', processed)
-    return buffer.tobytes()
+# @celery.task(name="process_ws_frame")
+# def process_ws_frame(frame_data, model_name, confidence, colors):
+#
+#     return buffer.tobytes(), boxex
 
 
 @celery.task(name="process_camera_frames")
