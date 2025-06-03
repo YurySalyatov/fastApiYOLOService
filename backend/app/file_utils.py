@@ -126,6 +126,7 @@ def process_image(model, classes, colors, input_path: str,
 
 
 def return_process_image(model, classes, colors, frame, confidence=0.5):
+    frame = cv2.imread(frame)
     results = process_frame(model, frame)
     frame, sort_results = draw_detections(frame, results, confidence, classes, colors)
     return frame, sort_results

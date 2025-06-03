@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 
 
 class Settings:
@@ -10,6 +11,7 @@ class Settings:
     PROCESSED_FOLDER = BASE_DIR / "shared_volume/processed"
     MODELS_FOLDER = BASE_DIR / "shared_volume/models"
     LOGS_FOLDER = BASE_DIR / "shared_volume/logs"
+    TEST_FOLDER = BASE_DIR / "test_dir"
     # MODELS_FOLDER = Path("/app/" + str(MODELS_FOLDER))
     DEFAULT_COLORS = []
     DEFAULT_CUSTOM_WEIGHTS = None
@@ -20,3 +22,12 @@ class Settings:
 
 
 settings = Settings()
+
+logger = logging.getLogger("app")
+logger.setLevel(logging.INFO)
+settings.LOGS_FOLDER.mkdir(parents=True, exist_ok=True)
+file_handler = logging.FileHandler(settings.LOGS_FOLDER / "app.log")
+file_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)

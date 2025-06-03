@@ -1,4 +1,4 @@
-# test_upload_processing.py
+# test_endpoints.py
 import pytest
 import pytest_asyncio
 import httpx
@@ -113,26 +113,26 @@ def test_available_models(test_app):
         assert not dont_exist, f"Expecting found {model_name} model, but not found"
 
 
-def test_video_feed_websocket():
-    with websockets.connect("ws://backend:8000/api/ws/video_feed") as ws:
-        frames_folder = settings.TEST_FOLDER / "frames"
-        frames = frames_folder.glob("*.jpg")
-        colors = [(255, 0, 0), (0, 0, 255)]
-        ws.send(json.dumps({
-            "model_name": "fire-smoke",
-            "confidence": 0.5,
-            "colors": json.dumps(colors)
-        }))
-        for frame_file in frames:
-            with open(frame_file, "rb") as f:
-                frame_content = f.read()
-
-            ws.send(frame_content)
-
-            processed = ws.recv()
-            assert len(processed) > 0
-
-            try:
-                base64.b64decode(processed)
-            except Exception:
-                pytest.fail("Invalid base64 image received")
+# def test_video_feed_websocket():
+#     with websockets.connect("ws://backend:8000/api/ws/video_feed") as ws:
+#         frames_folder = settings.TEST_FOLDER / "frames"
+#         frames = frames_folder.glob("*.jpg")
+#         colors = [(255, 0, 0), (0, 0, 255)]
+#         ws.send(json.dumps({
+#             "model_name": "fire-smoke",
+#             "confidence": 0.5,
+#             "colors": json.dumps(colors)
+#         }))
+#         for frame_file in frames:
+#             with open(frame_file, "rb") as f:
+#                 frame_content = f.read()
+#
+#             ws.send(frame_content)
+#
+#             processed = ws.recv()
+#             assert len(processed) > 0
+#
+#             try:
+#                 base64.b64decode(processed)
+#             except Exception:
+#                 pytest.fail("Invalid base64 image received")

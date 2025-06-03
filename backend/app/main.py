@@ -11,9 +11,9 @@ from ultralytics import YOLO
 import base64
 import asyncio
 
-from app.config import settings
+from app.config import settings, logger
 from app.anydetector import get_detector
-from app.tasks import process_ws_frame, process_image_task, process_video_task, detect_list_of_frames
+from app.tasks import process_ws_frame, process_image_task, process_video_task, process_camera_frames
 from app.file_utils import load_model, get_colors, return_process_image
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,10 +22,6 @@ app = FastAPI()
 celery = Celery(__name__,
                 broker=settings.REDIS_URL,
                 backend=settings.REDIS_URL,
-                # task_serializer='pickle',
-                # result_serializer='pickle',
-                # accept_content=['pickle', 'json'],
-                # event_serializer='pickle'
                 )
 
 if __name__ == "__main__":
@@ -51,15 +47,16 @@ Path(settings.LOGS_FOLDER).mkdir(exist_ok=True, parents=True)
 @app.on_event("startup")
 async def startup_event():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(cleanup_files, 'interval', minutes=30)
+    scheduler.add_job(cleanup_files, 'interval', minutes=1)
     scheduler.start()
+    logger.info("Application started")
 
 
 def cleanup_files():
     now = time.time()
     for folder in [settings.UPLOAD_FOLDER, settings.PROCESSED_FOLDER]:
         for file_path in folder.glob('*'):
-            if file_path.is_file() and (now - file_path.stat().st_mtime) > 3600:
+            if file_path.is_file() and (now - file_path.stat().st_mtime) > 360:
                 file_path.unlink()
 
 
@@ -98,7 +95,7 @@ async def upload_file(
         colors: str = Form(settings.DEFAULT_COLORS),
         custom_weights: UploadFile = File(settings.DEFAULT_CUSTOM_WEIGHTS)
 ):
-    print("testing")
+    logger.info("Used upload/file/ to detect one file")
     colors = json.loads(colors)
     confidence = float(confidence)
     file_ext = Path(file.filename).suffix.lower()
@@ -125,17 +122,19 @@ async def upload_file(
     return JSONResponse({"task_id": result.id})
 
 
-@app.get("/api/tasks/{task_id}")
+@app.get("/api/tasks/{task_id}/")
 async def get_task_status(task_id: str):
     task = celery.AsyncResult(task_id)
     # print(task.status, task.result if task.ready() else None)
+    logger.info(f"Used /api/tasks/{task_id}")
     return JSONResponse({"status": task.status, "result": task.result if task.ready() else None})
 
 
-@app.get("/api/models")
+@app.get("/api/models/")
 def get_available_models():
     models = []
     print(settings.ROOT)
+    logger.info("Used /api/models/")
     models_dir = settings.MODELS_FOLDER
     for pt_file in models_dir.glob("*.pt"):
         model_name = pt_file.stem
@@ -163,12 +162,11 @@ async def process_live_frame(
         colors: str = Form(...)
 ):
     try:
-        model = load_model(model_name)
-        classes = model.names
         colors = json.loads(colors)
         confidence = float(confidence)
         file_ext = Path(frame.filename).suffix.lower()
-        # detector = get_detector(model_name)
+        logger.info("Used /camera_upload/process_frame/ to detect one file")
+
         file_id = f"{uuid.uuid4()}{file_ext}"
         file_path = settings.UPLOAD_FOLDER / file_id
 
@@ -177,12 +175,15 @@ async def process_live_frame(
             if len(content) > settings.MAX_FILE_SIZE:
                 raise HTTPException(413, "File too large")
             buffer.write(content)
+        model = load_model(model_name)
+        classes = model.names
         buffer, boxes = return_process_image(model, classes, colors, file_path, confidence)
-        # last_frames.append(boxes)
-        # if len(last_frames) >= MAX_CAPACITY:
-        #     task = detect_list_of_frames.si(detector, last_frames[:])
-        #     result = task.delay()
-        #     last_frames.clear()
+        last_frames.append(boxes)
+        if len(last_frames) >= MAX_CAPACITY:
+            task = process_camera_frames.si(model_name, last_frames[:])
+            task.delay()
+            last_frames.clear()
+            logger.info("Process 10 frames in /camera_upload/process_frame/")
         encoded_frame = base64.b64encode(buffer).decode('utf-8')
         return JSONResponse({
             "processed_frame": encoded_frame,

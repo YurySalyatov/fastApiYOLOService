@@ -29,6 +29,7 @@ services:
       - ./backend:/usr/backend/app
       - ./shared_volume:/app/shared_volume
       - ./shared_volume/models:/app/shared_volume/models
+      - ./test_dir:/app/test_dir
     ports:
       - "8000:8000"
     networks:

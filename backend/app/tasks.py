@@ -7,7 +7,7 @@ from pathlib import Path
 from app.file_utils import return_process_image, load_model
 from app.config import settings
 from app.file_utils import process_image, process_video
-from app.anydetector import AnyDetector
+from app.anydetector import get_detector
 
 celery = Celery(__name__, broker=settings.REDIS_URL)
 
@@ -30,7 +30,7 @@ def process_video_task(input_path, confidence, model_name, colors):
     return str(output_path)
 
 
-@celery.task(name="process_ws_frame", serializer='pickle')
+@celery.task(name="process_ws_frame")
 def process_ws_frame(frame_data, model_name, confidence, colors):
     nparr = np.frombuffer(frame_data, np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -48,6 +48,7 @@ def process_ws_frame(frame_data, model_name, confidence, colors):
     return buffer.tobytes()
 
 
-@celery.task(name="process_ws_frame", serializer='pickle')
-def detect_list_of_frames(detector: AnyDetector, list_of_frames):
+@celery.task(name="process_camera_frames")
+def process_camera_frames(detector_name, list_of_frames):
+    detector = get_detector(detector_name)
     detector.detect_frames(list_of_frames, time.time())

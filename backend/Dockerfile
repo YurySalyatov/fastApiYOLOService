@@ -1,7 +1,5 @@
 FROM python:3.11-slim
 
-
-
 WORKDIR /usr/backend/app
 
 COPY ./requirements.txt /usr/backend/app/requirements.txt

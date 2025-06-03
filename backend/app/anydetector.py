@@ -1,18 +1,22 @@
 import os
 from pathlib import Path
 from app.file_utils import union_area
-from app.config import settings
+from app.config import settings, logger
 
 
 class Destination:
     def __init__(self, file_path):
         self.file_path = file_path
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        os.makedirs(Path(self.file_path).parent, exist_ok=True)
+        # if os.path.exists(file_path):
+        #     os.remove(file_path)
+        os.makedirs(self.file_path.parent, exist_ok=True)
+        # with open(file_path, 'w') as _:
+        #     pass
 
     def send_message(self, message):
+        logger.info(f"Send message")
         with open(self.file_path, "a") as f:
+            logger.info(f"Message: {message} to destination: {self.file_path}")
             f.write(message)
 
 
@@ -25,9 +29,11 @@ class AnyDetector:
         self.storage = {}
 
     def detect_frames(self, boxes_names_frames, time):
+        logger.info(self.destination.file_path)
         for i, cond in enumerate(self.conds):
-            res, message = cond(boxes_names_frames, self.id, time)
+            res, message = cond(boxes_names_frames, self.id, time, self.storage)
             if res:
+                logger.info("Send message to destination")
                 self.call_massage(message)
 
     def call_massage(self, message):
