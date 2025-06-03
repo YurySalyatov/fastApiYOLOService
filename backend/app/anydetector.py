@@ -29,8 +29,9 @@ class AnyDetector:
         self.storage = {}
 
     def detect_frames(self, boxes_names_frames, time):
-        logger.info(self.destination.file_path)
+        logger.info(f"Use detect frames to {self.destination.file_path}")
         for i, cond in enumerate(self.conds):
+            logger.info("check cond")
             res, message = cond(boxes_names_frames, self.id, time, self.storage)
             if res:
                 logger.info("Send message to destination")

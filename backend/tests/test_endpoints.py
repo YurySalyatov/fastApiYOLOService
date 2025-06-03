@@ -9,10 +9,12 @@ from io import BytesIO
 import time
 import json
 import websockets
+from pathlib import Path
 import base64
 from starlette.testclient import TestClient
 
 from app.config import settings
+from app.anydetector import get_detector
 
 
 # Генерация тестового изображения
@@ -24,8 +26,7 @@ def generate_test_image():
 
 
 def test_image_upload_processing(test_app):
-    # Загрузка изображения
-    file_path = settings.TEST_FOLDER / "fire_example.jpeg"
+    file_path = Path(__file__).parent / "test_dir" / "fire_example.jpeg"
     with open(file_path, "rb") as f:
         file_content = f.read()
 
@@ -54,16 +55,28 @@ def test_image_upload_processing(test_app):
     assert "processed_" in response.json()["result"]
 
 
-def test_camera_upload_processing(test_app):
-    frames_folder = settings.TEST_FOLDER / "frames"
-    frames = frames_folder.glob("*.jpg")
+def clear_detector():
+    detector = get_detector('fire-smoke')
+    detector.storage = {}
+    log_file = settings.LOGS_FOLDER / "fire-smoke.log"
+    with open(log_file, "w") as _:
+        pass
 
+
+def test_camera_upload_processing(test_app):
+    frames_folder = Path(__file__).parent / "test_dir" / "frames"
+    frames = frames_folder.glob("*.jpg")
+    ln_frames = len(list(frames))
+    log_file = settings.LOGS_FOLDER / "fire-smoke.log"
+    assert ln_frames > 0, "Expected non empty folder"
+    frames = frames_folder.glob("*.jpg")
     colors = [(255, 0, 0), (0, 255, 0)]
     data = {
         "confidence": "0.5",
         "model_name": "fire-smoke",
         "colors": json.dumps(colors)
     }
+    clear_detector()
     for frame_file in frames:
         with open(frame_file, "rb") as f:
             frame_content = f.read()
@@ -84,19 +97,16 @@ def test_camera_upload_processing(test_app):
             base64.b64decode(json_data['processed_frame'])
         except Exception:
             pytest.fail("Invalid base64 image received")
-    time.sleep(2)
+    time.sleep(10)
 
-    log_file = settings.LOGS_FOLDER / "fire-smoke.log"
     assert log_file.exists(), f"Log file {log_file} does not exist"
     assert log_file.stat().st_size > 0, "Log file is empty"
 
-    # Проверяем содержимое лог-файла
     with open(log_file, "r") as f:
         lines = f.readlines()
 
     assert len(lines) > 0, "Log file has no content"
 
-    # Проверяем формат каждой строки
     for i, line in enumerate(lines):
         assert line.startswith("Detector 1."), \
             f"Line {i + 1} does not start with 'Detector 1.': {line.strip()}"
@@ -115,13 +125,13 @@ def test_available_models(test_app):
         assert not dont_exist, f"Expecting found {model_name} model, but not found"
 
 
-def test_large_frame_handling(test_app):
+def test_websocket(test_app):
     colors = [(255, 0, 0), (0, 255, 0)]
-    frames_folder = settings.TEST_FOLDER / "frames"
-    test_frames_folder = settings.TEST_FOLDER / "frames/results"
+    frames_folder = Path(__file__).parent / "test_dir/frames"
+    test_frames_folder = frames_folder / "results"
     test_frames_folder.mkdir(parents=True, exist_ok=True)
     frames = frames_folder.glob("*.jpg")
-    ln_frames = len(list(frames))
+    log_file = settings.LOGS_FOLDER / "fire-smoke.log"
     with test_app.websocket_connect("/api/ws/video_feed/") as websocket:
         websocket.send_json({"model_name": "fire-smoke", "confidence": 0.5, "colors": json.dumps(colors)})
         for frame_file in frames:
@@ -136,8 +146,12 @@ def test_large_frame_handling(test_app):
                     f.write(response)
             except Exception:
                 pytest.fail("Invalid bytes image received")
+    time.sleep(10)
+    ln_frames = len(list(frames_folder.glob("*.jpg")))
     test_frames = test_frames_folder.glob("*.jpg")
     ln_test_frames = len(list(test_frames))
     assert ln_test_frames > 0, "Nothing be resived"
     assert ln_test_frames == ln_frames, f"Not enough frames, expected {ln_frames}, but got {ln_test_frames}"
     shutil.rmtree(test_frames_folder)
+    assert log_file.exists(), f"Log file {log_file} does not exist"
+    assert log_file.stat().st_size > 0, "Log file is empty"
