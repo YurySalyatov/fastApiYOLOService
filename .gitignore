@@ -1,1 +1,2 @@
-src/tests/__pycashe__/*
+shared_volume/processed/*.*
+shared_volume/uploads/*.*
