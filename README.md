@@ -46,15 +46,17 @@ The system is containerized using Docker for easy deployment and scales with Cel
 
 ## Project Structure
 
+```
 project/
 ├── docker-compose.yml # Container orchestration
 ├── backend/ # API and processing logic
-│ ├── main.py # FastAPI application
-│ ├── task.py # Celery task definitions
-│ ├── config.py # Application settings
-│ ├── anydetector.py # Detection condition handlers
-│ ├── Dockerfile # Backend container setup
-│ └── file_utils.py # Media processing utilities
+│ ├── app/
+│ │ ├── main.py # FastAPI application
+│ │ ├── task.py # Celery task definitions
+│ │ ├── config.py # Application settings
+│ │ ├── anydetector.py # Detection condition handlers
+│ │ ├── file_utils.py # Media processing utilities 
+│ └── Dockerfile # Backend container setup
 ├── frontend/ # User interface
 │ ├── app.js # Frontend logic
 │ ├── index.html # Main interface
@@ -62,16 +64,18 @@ project/
 ├── nginx/ # Web server configuration
 │ └── default.conf
 ├── shared_volume/ # Persistent storage
-│ ├── logs # Detection logs
+│ ├── logs # Detection and app logs
 │ ├── models # Custom model weights
 │ ├── processed # Processed results
 │ └── uploads # User uploads
 ├── tests/ # Test suite
 │ ├── test_dir/ # Test media samples
-│ ├── test_api.py # API endpoint tests
-│ └── test_utils.py # Utility function tests
+│ ├── confest.py # Contains fixtured pices
+│ ├── test_endpoints.py # API endpoint tests
+│ ├── test_main.py # simple test
+│ └── test_nginx.py # frontend function tests
 └── README.md # Project documentation
-
+```
 ## Getting Started
 
 ### Prerequisites
