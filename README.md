@@ -50,13 +50,19 @@ The system is containerized using Docker for easy deployment and scales with Cel
 project/
 ├── docker-compose.yml # Container orchestration
 ├── backend/ # API and processing logic
-│ ├── app/
+│ ├── app/ # Service data
 │ │ ├── main.py # FastAPI application
 │ │ ├── task.py # Celery task definitions
 │ │ ├── config.py # Application settings
 │ │ ├── anydetector.py # Detection condition handlers
-│ │ ├── file_utils.py # Media processing utilities 
-│ └── Dockerfile # Backend container setup
+│ │ └── file_utils.py # Media processing utilities 
+│ ├── Dockerfile # Backend container setup
+│ └── tests/ # Test suite
+│ │ ├── test_dir/ # Test media samples
+│ │ ├── confest.py # Contains fixtured pices
+│ │ ├── test_endpoints.py # API endpoint tests
+│ │ ├── test_main.py # simple test
+│ │ └── test_nginx.py # frontend function tests
 ├── frontend/ # User interface
 │ ├── app.js # Frontend logic
 │ ├── index.html # Main interface
@@ -68,12 +74,6 @@ project/
 │ ├── models # Custom model weights
 │ ├── processed # Processed results
 │ └── uploads # User uploads
-├── tests/ # Test suite
-│ ├── test_dir/ # Test media samples
-│ ├── confest.py # Contains fixtured pices
-│ ├── test_endpoints.py # API endpoint tests
-│ ├── test_main.py # simple test
-│ └── test_nginx.py # frontend function tests
 └── README.md # Project documentation
 ```
 ## Getting Started
