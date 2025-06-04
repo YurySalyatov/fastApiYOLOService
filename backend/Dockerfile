@@ -6,9 +6,9 @@ COPY ./requirements.txt /usr/backend/app/requirements.txt
 
 RUN apt-get update && apt-get install -y \
     libgl1 \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir -r /usr/backend/app/requirements.txt
+    ffmpeg
+RUN rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir -r /usr/backend/app/requirements.txt
 
 COPY . /usr/backend/app/
 

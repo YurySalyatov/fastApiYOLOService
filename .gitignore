@@ -2,5 +2,4 @@ shared_volume/processed/*.*
 shared_volume/uploads/*.*
 backend/app/__pycache__/*.*
 backend/tests/__pycache__/*.*
-backend/tests/test_nginx_proxy.py
 .idea

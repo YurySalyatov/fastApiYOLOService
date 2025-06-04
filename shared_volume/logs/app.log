@@ -3727,3 +3727,88 @@
 2025-06-03 20:53:59,444 - app - INFO - check cond
 2025-06-03 20:53:59,444 - app - INFO - check cond
 2025-06-03 20:53:59,444 - app - INFO - check cond
+2025-06-04 18:59:20,184 - app - INFO - Application started
+2025-06-04 19:01:50,637 - app - INFO - Used upload/file/ to detect one file
+2025-06-04 19:01:51,722 - app - INFO - Used /api/tasks/2e781bb1-4058-4ead-8065-11baecf78f40
+2025-06-04 19:01:51,725 - app - INFO - status: PENDING, result: None
+2025-06-04 19:01:52,741 - app - INFO - Used /api/tasks/2e781bb1-4058-4ead-8065-11baecf78f40
+2025-06-04 19:01:52,744 - app - INFO - status: PENDING, result: None
+2025-06-04 19:01:53,757 - app - INFO - Used /api/tasks/2e781bb1-4058-4ead-8065-11baecf78f40
+2025-06-04 19:01:53,759 - app - INFO - status: PENDING, result: None
+2025-06-04 19:01:54,777 - app - INFO - Used /api/tasks/2e781bb1-4058-4ead-8065-11baecf78f40
+2025-06-04 19:01:54,783 - app - INFO - status: PENDING, result: None
+2025-06-04 19:01:55,802 - app - INFO - Used /api/tasks/2e781bb1-4058-4ead-8065-11baecf78f40
+2025-06-04 19:01:55,804 - app - INFO - status: SUCCESS, result: processed_4913b9dd-d8a0-4d93-9f2d-73fc0c87102b.jpg
+2025-06-04 19:01:55,828 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:01,169 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:02,585 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:03,631 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:04,067 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:04,898 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:05,391 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:05,740 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:06,065 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:06,351 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:06,604 - app - INFO - Process 10 frames in /camera_upload/process_frame/
+2025-06-04 19:02:06,606 - app - INFO - Use detect frames to /app/shared_volume/logs/fire-smoke.log
+2025-06-04 19:02:06,606 - app - INFO - check cond
+2025-06-04 19:02:06,608 - app - INFO - Send message to destination
+2025-06-04 19:02:06,609 - app - INFO - Send message
+2025-06-04 19:02:06,610 - app - INFO - Message: Detector 1. Detect more fires: was 0 fires, became 1. Square of fire:19038.0 Detection at 1749063726.6062548
+ to destination: /app/shared_volume/logs/fire-smoke.log
+2025-06-04 19:02:06,611 - app - INFO - check cond
+2025-06-04 19:02:06,612 - app - INFO - Send message to destination
+2025-06-04 19:02:06,612 - app - INFO - Send message
+2025-06-04 19:02:06,613 - app - INFO - Message: Detector 1. Detect more smokes: was 0 smokes, became 1. Square of smoke:92131.0 Detection at 1749063726.6062548
+ to destination: /app/shared_volume/logs/fire-smoke.log
+2025-06-04 19:02:06,614 - app - INFO - check cond
+2025-06-04 19:02:06,647 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:06,959 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:07,248 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:07,516 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:07,784 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:08,042 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:08,316 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:08,586 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:08,891 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:09,168 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:09,404 - app - INFO - Process 10 frames in /camera_upload/process_frame/
+2025-06-04 19:02:09,406 - app - INFO - Use detect frames to /app/shared_volume/logs/fire-smoke.log
+2025-06-04 19:02:09,407 - app - INFO - check cond
+2025-06-04 19:02:09,408 - app - INFO - Send message to destination
+2025-06-04 19:02:09,408 - app - INFO - Send message
+2025-06-04 19:02:09,409 - app - INFO - Message: Detector 1. Detect more fires: was 1 fires, became 3. Square of fire:19444.0 Detection at 1749063729.406865
+ to destination: /app/shared_volume/logs/fire-smoke.log
+2025-06-04 19:02:09,410 - app - INFO - check cond
+2025-06-04 19:02:09,411 - app - INFO - Send message to destination
+2025-06-04 19:02:09,411 - app - INFO - Send message
+2025-06-04 19:02:09,412 - app - INFO - Message: Detector 1. Detect more smokes: was 1 smokes, became 2. Square of smoke:212577.0 Detection at 1749063729.406865
+ to destination: /app/shared_volume/logs/fire-smoke.log
+2025-06-04 19:02:09,413 - app - INFO - check cond
+2025-06-04 19:02:09,439 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:09,700 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:09,956 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:10,201 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:10,458 - app - INFO - Used /camera_upload/process_frame/ to detect one file
+2025-06-04 19:02:20,730 - app - INFO - Used /api/models/
+2025-06-04 19:02:22,446 - app - INFO - Used /api/ws/video_feed/ to detect one file model: fire-smoke, confidence: 0.5, colors: [[255, 0, 0], [0, 255, 0]]
+2025-06-04 19:02:25,294 - app - INFO - Process 10 frames in /api/ws/video_feed/
+2025-06-04 19:02:25,295 - app - INFO - Use detect frames to /app/shared_volume/logs/fire-smoke.log
+2025-06-04 19:02:25,296 - app - INFO - check cond
+2025-06-04 19:02:25,296 - app - INFO - check cond
+2025-06-04 19:02:25,296 - app - INFO - check cond
+2025-06-04 19:02:27,855 - app - INFO - Process 10 frames in /api/ws/video_feed/
+2025-06-04 19:02:27,857 - app - INFO - Use detect frames to /app/shared_volume/logs/fire-smoke.log
+2025-06-04 19:02:27,857 - app - INFO - check cond
+2025-06-04 19:02:27,857 - app - INFO - check cond
+2025-06-04 19:02:27,857 - app - INFO - check cond
+2025-06-04 19:03:43,220 - app - INFO - Used /api/models/
+2025-06-04 19:09:56,935 - app - INFO - Application started
+2025-06-04 19:14:50,377 - app - INFO - Application started
+2025-06-04 19:15:48,127 - app - INFO - Application started
+2025-06-04 19:27:44,768 - app - INFO - Application started
+2025-06-04 19:28:45,899 - app - INFO - Application started
+2025-06-04 19:29:54,693 - app - INFO - Application started
+2025-06-04 19:31:21,792 - app - INFO - Application started
+2025-06-04 19:32:10,605 - app - INFO - Application started
+2025-06-04 19:32:30,941 - app - INFO - Used /api/models/
