@@ -220,7 +220,6 @@ def package_detection(boxes_names_frames, id, time, storage):
     for box in boxes_names_frames:
         packege = max(len(box.get('courier-package', [])), packege)
     if packege > 0:
-        prev_time_detection = -1
         storage['prev_detected'] = -1
         return False, None
     if prev_time_detection == -1:
