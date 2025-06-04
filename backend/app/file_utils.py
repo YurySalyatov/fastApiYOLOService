@@ -60,7 +60,7 @@ def draw_detections(frame, detections, confidence, classes, colors=DEFAULT_COLOR
         class_id = int(box.cls)
         label = classes[class_id]
         conf = float(box.conf)
-        if conf < confidence:  # Confidence threshold
+        if conf < confidence:
             continue
 
         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -190,7 +190,6 @@ def proces_camera(contents, classes, colors, model, confidence):
 
     processed_img, boxes = return_process_image(model, classes, colors, img, confidence=confidence)
 
-    # Кодирование результата
     _, buffer = cv2.imencode('.jpg', processed_img)
     return buffer, boxes
 

@@ -11,18 +11,9 @@ import json
 import websockets
 from pathlib import Path
 import base64
-from starlette.testclient import TestClient
 
 from app.config import settings
 from app.anydetector import get_detector
-
-
-# Генерация тестового изображения
-def generate_test_image():
-    img = Image.new("RGB", (800, 600), color="red")
-    buffer = BytesIO()
-    img.save(buffer, format="JPEG")
-    return buffer.getvalue()
 
 
 def test_image_upload_processing(test_app):
@@ -43,8 +34,7 @@ def test_image_upload_processing(test_app):
     assert response.status_code == 200
     task_id = response.json()["task_id"]
 
-    # Проверка статуса задачи
-    for _ in range(10):  # Ожидание обработки
+    for _ in range(10):
         time.sleep(1)
         response = test_app.get(f"/api/tasks/{task_id}")
         status = response.json()["status"]
@@ -86,7 +76,6 @@ def test_camera_upload_processing(test_app):
         response = test_app.post("/camera_upload/process_frame/", files=files, data=data)
 
         now = int(time.time() * 1000)
-        # print(response.json())
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         json_data = response.json()
         assert "processed_frame" in json_data, "processed_frame not in response"

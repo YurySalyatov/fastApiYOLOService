@@ -1,3 +1,4 @@
+import random
 import uuid
 import time
 from pathlib import Path
@@ -9,7 +10,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import json
 from ultralytics import YOLO
 import base64
-import asyncio
 import cv2
 import numpy as np
 
@@ -126,8 +126,8 @@ async def upload_file(
 @app.get("/api/tasks/{task_id}/")
 async def get_task_status(task_id: str):
     task = celery.AsyncResult(task_id)
-    # print(task.status, task.result if task.ready() else None)
     logger.info(f"Used /api/tasks/{task_id}")
+    logger.info(f"status: {task.status}, result: {task.result if task.ready() else None}")
     return JSONResponse({"status": task.status, "result": task.result if task.ready() else None})
 
 
@@ -151,23 +151,52 @@ def get_available_models():
     return JSONResponse(models)
 
 
+def skip_frames_n(n, count, frame, frame_list):
+    if count % n != 0:
+        frame_list.append(frame)
+    return count + 1
+
+
+def skip_frames_q(q, frame, frame_list):
+    if random.random() < q:
+        frame_list.append(frame)
+
+
 MAX_CAPACITY = 10
 last_camera_frames = []
+count = [0]
 
 
 @app.post("/camera_upload/process_frame/")
 async def process_live_frame(
         frame: UploadFile = File(...),
-        confidence: str = Form(...),
+        confidence: str = Form('0.5'),
         model_name: str = Form(...),
-        colors: str = Form(...)
+        colors: str = Form(...),
+        n: str = Form('0'),
+        q: str = Form('0')
+
 ):
     try:
         colors = json.loads(colors)
         confidence = float(confidence)
         file_ext = Path(frame.filename).suffix.lower()
+        n = int(n)
+        q = float(q)
         logger.info("Used /camera_upload/process_frame/ to detect one file")
-
+        if n != 0:
+            if count[0] % n == 0:
+                count[0] += 1
+                return JSONResponse({
+                    "processed_frame": base64.b64encode(frame).decode('utf-8'),
+                    "timestamp": int(time.time() * 1000)
+                })
+        elif q != 0:
+            if random.random() < q:
+                return JSONResponse({
+                    "processed_frame": base64.b64encode(frame).decode('utf-8'),
+                    "timestamp": int(time.time() * 1000)
+                })
         file_id = f"{uuid.uuid4()}{file_ext}"
         file_path = settings.UPLOAD_FOLDER / file_id
 
@@ -186,6 +215,7 @@ async def process_live_frame(
             last_camera_frames.clear()
             logger.info("Process 10 frames in /camera_upload/process_frame/")
         encoded_frame = base64.b64encode(buffer).decode('utf-8')
+        count[0] += 1
         return JSONResponse({
             "processed_frame": encoded_frame,
             "timestamp": int(time.time() * 1000)
@@ -206,13 +236,14 @@ async def video_feed_websocket(websocket: WebSocket):
     model_name = init_data['model_name']
     confidence = init_data['confidence']
     colors = init_data['colors']
+    prob = init_data.get('prob', 0)
+    n = init_data.get('n', 0)
     colors = json.loads(colors)
     logger.info(
         f"Used /api/ws/video_feed/ to detect one file model: {model_name}, confidence: {confidence}, colors: {colors}")
     try:
         while True:
             frame_data = await websocket.receive_bytes()
-            logger.info("Receive one frame on websocket")
             nparr = np.frombuffer(frame_data, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             file_id = f"{uuid.uuid4()}.jpg"
@@ -220,7 +251,6 @@ async def video_feed_websocket(websocket: WebSocket):
             cv2.imwrite(file_path, frame)
             model = load_model(model_name)
             classes = model.names
-            logger.info("Before process")
             processed, boxex = return_process_image(
                 model,
                 classes,
@@ -228,8 +258,6 @@ async def video_feed_websocket(websocket: WebSocket):
                 file_path,
                 confidence
             )
-            logger.info("Return processed from websocket")
-            # Конвертация в bytes
             _, buffer = cv2.imencode('.jpg', processed)
             last_ws_frames.append(boxex)
             if len(last_ws_frames) >= MAX_CAPACITY:

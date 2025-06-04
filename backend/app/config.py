@@ -12,13 +12,12 @@ class Settings:
     MODELS_FOLDER = BASE_DIR / "shared_volume/models"
     LOGS_FOLDER = BASE_DIR / "shared_volume/logs"
     TEST_FOLDER = BASE_DIR / "test_dir"
-    # MODELS_FOLDER = Path("/app/" + str(MODELS_FOLDER))
     DEFAULT_COLORS = []
     DEFAULT_CUSTOM_WEIGHTS = None
     MAX_FILE_SIZE = 1024 * 1024 * 1024  # 1GB
     DEFAULT_MODEL = "yolo12s"
     # change to false in prod
-    DEBUG = True
+    DEBUG = False
     MAX_TIME_FILES_LIVE = 360
 
 

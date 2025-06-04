@@ -28,12 +28,6 @@ def process_video_task(input_path, confidence, model_name, colors):
     return str(output_path)
 
 
-# @celery.task(name="process_ws_frame")
-# def process_ws_frame(frame_data, model_name, confidence, colors):
-#
-#     return buffer.tobytes(), boxex
-
-
 @celery.task(name="process_camera_frames")
 def process_camera_frames(detector_name, list_of_frames):
     detector = get_detector(detector_name)

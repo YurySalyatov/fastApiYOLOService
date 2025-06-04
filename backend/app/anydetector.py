@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from app.file_utils import union_area
 from app.config import settings, logger
 
@@ -7,11 +6,7 @@ from app.config import settings, logger
 class Destination:
     def __init__(self, file_path):
         self.file_path = file_path
-        # if os.path.exists(file_path):
-        #     os.remove(file_path)
         os.makedirs(self.file_path.parent, exist_ok=True)
-        # with open(file_path, 'w') as _:
-        #     pass
 
     def send_message(self, message):
         logger.info(f"Send message")
@@ -209,8 +204,31 @@ def couriers_detection(boxes_names_frames, id, time, storage):
     return True, message
 
 
-# def package_detection(boxes_names_frames, id, time, storage):
-#
+def format_time(time):
+    hours = time // 3600
+    minutes = (time % 3600) // 60
+    seconds = time % 60
+    return f"{hours}:{minutes}:{seconds}"
+
+
+MAX_TIME = 1 * 60 * 60
+
+
+def package_detection(boxes_names_frames, id, time, storage):
+    prev_time_detection = storage['prev_detected']
+    packege = 0
+    for box in boxes_names_frames:
+        packege = max(len(box.get('courier-package', [])), packege)
+    if packege > 0:
+        prev_time_detection = -1
+        storage['prev_detected'] = -1
+        return False, None
+    if prev_time_detection == -1:
+        storage['prev_detected'] = time
+    if time - prev_time_detection < MAX_TIME:
+        return False, None
+    return True, (f"Detector {id}. Detect courier package too long: {format_time(int(time - prev_time_detection))}. "
+                  f"Detection at {time}\n")
 
 
 default_logs = Destination(settings.LOGS_FOLDER / "default.log")
@@ -231,7 +249,7 @@ dangerous_logs = Destination(settings.LOGS_FOLDER / "dangerous.log")
 dangerous_detector = AnyDetector(4, [dangerous_detection], 'dangerous detector', dangerous_logs)
 
 couriers_logs = Destination(settings.LOGS_FOLDER / "couriers.log")
-couriers_detector = AnyDetector(5, [couriers_detection], 'couriers detector', couriers_logs)
+couriers_detector = AnyDetector(5, [couriers_detection, package_detection], 'couriers detector', couriers_logs)
 
 all_detectors = {'fire-smoke': fire_smoke_detector,
                  'trash': trash_detector,

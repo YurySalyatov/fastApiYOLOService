@@ -61,8 +61,7 @@ project/
 │ │ ├── test_dir/ # Test media samples
 │ │ ├── confest.py # Contains fixtured pices
 │ │ ├── test_endpoints.py # API endpoint tests
-│ │ ├── test_main.py # simple test
-│ │ └── test_nginx.py # frontend function tests
+│ │ └── test_main.py # Simple test
 ├── frontend/ # User interface
 │ ├── app.js # Frontend logic
 │ ├── index.html # Main interface
@@ -76,6 +75,7 @@ project/
 │ └── uploads # User uploads
 └── README.md # Project documentation
 ```
+
 ## Getting Started
 
 ### Prerequisites
@@ -107,6 +107,7 @@ project/
    ```bash
    docker-compose down
    ```
+
 ## Usage Guide
 
 ### Web Interface
@@ -351,3 +352,6 @@ curl -X POST http://localhost/camera_upload/process_frame/ \
 |-------------------|---------------|----------------------------------|----------------------------------|
 | `processed_frame` | Base64 String | Image frame to process in base64 | "/9j/4AAQSkZJRgABAQEAYABgAAD..." |
 | `timestamp`       | Int           | Time when processed ended0       | 1717182000                       |
+
+### 5. Process Websocket
+Endpoint 
