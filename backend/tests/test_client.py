@@ -33,7 +33,7 @@ def image_processing():
 
     processed = False
     result_url = None
-    for _ in range(10):  # Ожидаем до 30 секунд
+    for _ in range(10):
         time.sleep(3)
         task_response = requests.get(f"http://localhost:80/api/tasks/{task_id}/")
         task_data = task_response.json()
